@@ -1,5 +1,5 @@
 window.onload = function() {
-    var canvas = document.getElementById("canvas");
+    var canvas = document.getElementById("myCanvas");
     var ctx = canvas.getContext("2d");
 
     // Vectors a and b
@@ -59,6 +59,20 @@ window.onload = function() {
         drawGrid();
         drawVector(vectorA);
         drawVector(vectorB);
+
+        // Draw the projection of vectorA onto vectorB
+        var dotProduct = vectorA.x * vectorB.x + vectorA.y * vectorB.y;
+        var lenA = Math.sqrt(vectorA.x * vectorA.x + vectorA.y * vectorA.y);
+        var proj = dotProduct / (lenA * lenA);
+        var projVector = { x: proj * vectorA.x, y: proj * vectorA.y };
+
+        ctx.beginPath();
+        ctx.moveTo(250, 250);
+        ctx.lineTo(250 + projVector.x * 10, 250 - projVector.y * 10);
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.lineWidth = 1;
     }
 
     // Function to check if a point is within the control handle of a vector
