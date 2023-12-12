@@ -1,19 +1,27 @@
 window.onload = function() {
-    // Get the canvas and context
-    var canvas = document.getElementById("myCanvas");
+    var canvas = document.getElementById("canvas");
     var ctx = canvas.getContext("2d");
 
-    // Define the vector coordinates
-    var vectorA = { x: 1, y: 3 };
-    var vectorB = { x: 4, y: 2 };
+    // Vectors a and b
+    var vectorA = { x: 1, y: 3, color: "red" };
+    var vectorB = { x: 4, y: 2, color: "blue" };
+
+    // The currently selected vector
+    var selectedVector = null;
 
     // Function to draw a vector from the origin to a point
-    function drawVector(vector, color) {
+    function drawVector(vector) {
         ctx.beginPath();
-        ctx.moveTo(canvas.width / 2, canvas.height / 2);
-        ctx.lineTo(canvas.width / 2 + vector.x * 50, canvas.height / 2 - vector.y * 50);
-        ctx.strokeStyle = color;
+        ctx.moveTo(250, 250);
+        ctx.lineTo(250 + vector.x * 10, 250 - vector.y * 10);
+        ctx.strokeStyle = vector.color;
         ctx.stroke();
+
+        // Draw the control handle
+        ctx.beginPath();
+        ctx.arc(250 + vector.x * 10, 250 - vector.y * 10, 10, 0, 2 * Math.PI);
+        ctx.fillStyle = vector.color;
+        ctx.fill();
     }
 
     // Function to draw the grid
@@ -21,15 +29,15 @@ window.onload = function() {
         ctx.beginPath();
 
         // Draw vertical lines
-        for (var x = 0.5; x < canvas.width; x += 50) {
+        for (var x = 0.5; x < 500; x += 10) {
             ctx.moveTo(x, 0);
-            ctx.lineTo(x, canvas.height);
+            ctx.lineTo(x, 500);
         }
 
         // Draw horizontal lines
-        for (var y = 0.5; y < canvas.height; y += 50) {
+        for (var y = 0.5; y < 500; y += 10) {
             ctx.moveTo(0, y);
-            ctx.lineTo(canvas.width, y);
+            ctx.lineTo(500, y);
         }
 
         ctx.strokeStyle = "#ddd";
@@ -37,10 +45,10 @@ window.onload = function() {
 
         // Draw the x and y axis
         ctx.beginPath();
-        ctx.moveTo(canvas.width / 2, 0);
-        ctx.lineTo(canvas.width / 2, canvas.height);
-        ctx.moveTo(0, canvas.height / 2);
-        ctx.lineTo(canvas.width, canvas.height / 2);
+        ctx.moveTo(0, 250);
+        ctx.lineTo(500, 250);
+        ctx.moveTo(250, 0);
+        ctx.lineTo(250, 500);
         ctx.strokeStyle = "#000";
         ctx.stroke();
     }
@@ -49,19 +57,44 @@ window.onload = function() {
     function redrawCanvas() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawGrid();
-        drawVector(vectorA, "red");
-        drawVector(vectorB, "blue");
+        drawVector(vectorA);
+        drawVector(vectorB);
     }
 
-    // Redraw the canvas initially
-    redrawCanvas();
+    // Function to check if a point is within the control handle of a vector
+    function isWithinHandle(point, vector) {
+        var dx = point.x - (250 + vector.x * 10);
+        var dy = point.y - (250 - vector.y * 10);
+        return Math.sqrt(dx * dx + dy * dy) < 10;
+    }
 
-    // Add a click event listener to the canvas
-    canvas.addEventListener("click", function(event) {
+    // Mouse down event listener
+    canvas.addEventListener("mousedown", function(event) {
         var rect = canvas.getBoundingClientRect();
-        var x = event.clientX - rect.left - canvas.width / 2;
-        var y = canvas.height / 2 - (event.clientY - rect.top);
-        vectorA = { x: x / 50, y: y / 50 };
-        redrawCanvas();
+        var point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+
+        if (isWithinHandle(point, vectorA)) {
+            selectedVector = vectorA;
+        } else if (isWithinHandle(point, vectorB)) {
+            selectedVector = vectorB;
+        }
     });
+
+    // Mouse move event listener
+    canvas.addEventListener("mousemove", function(event) {
+        if (selectedVector) {
+            var rect = canvas.getBoundingClientRect();
+            selectedVector.x = (event.clientX - rect.left - 250) / 10;
+            selectedVector.y = (250 - (event.clientY - rect.top)) / 10;
+            redrawCanvas();
+        }
+    });
+
+    // Mouse up event listener
+    canvas.addEventListener("mouseup", function(event) {
+        selectedVector = null;
+    });
+
+    // Initial draw
+    redrawCanvas();
 }
