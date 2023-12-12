@@ -52,8 +52,18 @@ window.onload = function() {
         ctx.strokeStyle = "#000";
         ctx.stroke();
     }
-
-    // Function to redraw the canvas
+    function dotProduct(vector1, vector2) {
+        return vector1.x * vector2.x + vector1.y * vector2.y;
+    }
+    
+    function projection(vectorA, vectorB) {
+        var dotProductAB = dotProduct(vectorA, vectorB);
+        var dotProductBB = dotProduct(vectorB, vectorB);
+        var scalar = dotProductAB / dotProductBB;
+        return { x: scalar * vectorB.x, y: scalar * vectorB.y };
+    }
+    
+// Function to redraw the canvas
     function redrawCanvas() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawGrid();
@@ -61,19 +71,34 @@ window.onload = function() {
         drawVector(vectorB);
 
         // Draw the projection of vectorA onto vectorB
-        var dotProduct = vectorA.x * vectorB.x + vectorA.y * vectorB.y;
-        var lenA = Math.sqrt(vectorA.x * vectorA.x + vectorA.y * vectorA.y);
-        var proj = dotProduct / (lenA * lenA);
-        var projVector = { x: proj * vectorA.x, y: proj * vectorA.y };
-
+        var projVector = projection(vectorA, vectorB);
         ctx.beginPath();
         ctx.moveTo(250, 250);
         ctx.lineTo(250 + projVector.x * 10, 250 - projVector.y * 10);
         ctx.strokeStyle = "black";
         ctx.lineWidth = 2;
         ctx.stroke();
+
+        // Draw the perpendicular line from the top of vectorA to the projection
+        ctx.beginPath();
+        ctx.moveTo(250 + vectorA.x * 10, 250 - vectorA.y * 10);
+        ctx.lineTo(250 + projVector.x * 10, 250 - projVector.y * 10);
+        ctx.strokeStyle = "green";
+        ctx.stroke();
+
+        // Draw the right angle symbol
+        var rightAngleSize = 10;
+        var rightAnglePoint = { x: 250 + projVector.x * 10, y: 250 - projVector.y * 10 };
+        ctx.beginPath();
+        ctx.moveTo(rightAnglePoint.x, rightAnglePoint.y - rightAngleSize);
+        ctx.lineTo(rightAnglePoint.x, rightAnglePoint.y);
+        ctx.lineTo(rightAnglePoint.x - rightAngleSize, rightAnglePoint.y);
+        ctx.strokeStyle = "black";
+        ctx.stroke();
+
         ctx.lineWidth = 1;
     }
+
 
     // Function to check if a point is within the control handle of a vector
     function isWithinHandle(point, vector) {
