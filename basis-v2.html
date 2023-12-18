@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Interactive Vector Projection with p5.js</title>
+    <title>Interactive Basis Vectors with p5.js</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <style>
         body {
@@ -15,14 +15,16 @@
 </head>
 <body>
     <script>
-        let v;
-        let dragging = false;
+        let v, basis1, basis2;
+        let draggingV = false, draggingBasis1 = false, draggingBasis2 = false;
         const handleRadius = 10;
 
         function setup() {
             createCanvas(400, 400);
             angleMode(DEGREES);
             v = createVector(100, 50);
+            basis1 = createVector(50, 0);
+            basis2 = createVector(0, 50);
         }
 
         function draw() {
@@ -30,34 +32,49 @@
             translate(width / 2, height / 2);
             drawGrid();
 
-            // Update vector if dragging
-            if (dragging) {
+            // Update vectors if dragging
+            if (draggingV) {
                 v.x = mouseX - width / 2;
                 v.y = mouseY - height / 2;
+            } else if (draggingBasis1) {
+                basis1.x = mouseX - width / 2;
+                basis1.y = mouseY - height / 2;
+                basis1.normalize().mult(50);
+                basis2 = createVector(-basis1.y, basis1.x); // 90 degrees rotated
+            } else if (draggingBasis2) {
+                basis2.x = mouseX - width / 2;
+                basis2.y = mouseY - height / 2;
+                basis2.normalize().mult(50);
+                basis1 = createVector(basis2.y, -basis2.x); // 90 degrees rotated
             }
 
-            // Draw vector and handle
+            // Draw vectors
             drawVector(v, 'blue', 'V (Standard Basis)');
-            ellipse(v.x, v.y, handleRadius * 2);
-
-            // Draw basis vectors and projections
-            let basis1 = p5.Vector.fromAngle(radians(45)).mult(50);
-            let basis2 = p5.Vector.fromAngle(radians(135)).mult(50);
             drawVector(basis1, 'red', 'Basis 1');
             drawVector(basis2, 'green', 'Basis 2');
+
+            // Draw handles
+            ellipse(v.x, v.y, handleRadius * 2);
+            ellipse(basis1.x, basis1.y, handleRadius * 2);
+            ellipse(basis2.x, basis2.y, handleRadius * 2);
+
+            // Draw projections
             drawVector(project(v, basis1), 'orange', 'Projection on Basis 1');
             drawVector(project(v, basis2), 'purple', 'Projection on Basis 2');
         }
 
         function mousePressed() {
-            let d = dist(mouseX, mouseY, v.x + width / 2, v.y + height / 2);
-            if (d < handleRadius) {
-                dragging = true;
+            if (dist(mouseX, mouseY, v.x + width / 2, v.y + height / 2) < handleRadius) {
+                draggingV = true;
+            } else if (dist(mouseX, mouseY, basis1.x + width / 2, basis1.y + height / 2) < handleRadius) {
+                draggingBasis1 = true;
+            } else if (dist(mouseX, mouseY, basis2.x + width / 2, basis2.y + height / 2) < handleRadius) {
+                draggingBasis2 = true;
             }
         }
 
         function mouseReleased() {
-            dragging = false;
+            draggingV = draggingBasis1 = draggingBasis2 = false;
         }
 
         function drawVector(vec, color, label) {
