@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vector Projection with p5.js</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        function setup() {
+            createCanvas(400, 400);
+            angleMode(DEGREES);
+        }
+
+        function draw() {
+            background(255);
+
+            // Translate the origin to the center of the canvas
+            translate(width / 2, height / 2);
+
+            // Draw axes
+            stroke(0);
+            line(-width / 2, 0, width / 2, 0); // X-axis
+            line(0, -height / 2, 0, height / 2); // Y-axis
+
+            // Define a vector in the standard basis
+            let v = createVector(100, 50);
+
+            // Draw the vector in standard basis
+            drawVector(v, 'blue', 'V (Standard Basis)');
+
+            // Define the orthonormal basis vectors, rotated 45 degrees
+            let basis1 = p5.Vector.fromAngle(radians(45)).mult(50);
+            let basis2 = p5.Vector.fromAngle(radians(135)).mult(50);
+
+            // Draw the orthonormal basis vectors
+            drawVector(basis1, 'red', 'Basis 1');
+            drawVector(basis2, 'green', 'Basis 2');
+
+            // Project the vector onto the new basis
+            let proj1 = project(v, basis1);
+            let proj2 = project(v, basis2);
+
+            // Draw the projections
+            drawVector(proj1, 'orange', 'Projection on Basis 1');
+            drawVector(proj2, 'purple', 'Projection on Basis 2');
+        }
+
+        // Function to draw vectors
+        function drawVector(vec, color, label) {
+            stroke(color);
+            fill(color);
+            line(0, 0, vec.x, vec.y);
+            ellipse(vec.x, vec.y, 5, 5);
+            text(label, vec.x + 5, vec.y + 5);
+        }
+
+        // Function to project a vector onto a basis
+        function project(vec, basis) {
+            let scalar = vec.dot(basis) / basis.magSq();
+            return p5.Vector.mult(basis, scalar);
+        }
+    </script>
+</body>
+</html>

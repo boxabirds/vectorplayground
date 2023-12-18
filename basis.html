@@ -36,6 +36,8 @@
                 ctx.moveTo(0, y);
                 ctx.lineTo(canvas.width, y);
             }
+
+            ctx.lineWidth = 1;
             ctx.stroke();
         }
 
@@ -99,7 +101,7 @@
             const rect = canvas.getBoundingClientRect();
             const mouseX = e.clientX - rect.left - center.x;
             const mouseY = center.y - (e.clientY - rect.top);
-            if (Math.sqrt(Math.pow(mouseX - vector.x, 2) + Math.pow(mouseY - vector.y, 2)) < 5) {
+            if (Math.sqrt(Math.pow(mouseX - vector.x, 2) + Math.pow(mouseY - vector.y, 2)) < 10) {
                 dragging = true;
             }
         }
