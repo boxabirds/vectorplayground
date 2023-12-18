@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Vector Projection with p5.js</title>
+    <title>Interactive Vector Projection with p5.js</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <style>
         body {
@@ -15,46 +15,51 @@
 </head>
 <body>
     <script>
+        let v;
+        let dragging = false;
+        const handleRadius = 10;
+
         function setup() {
             createCanvas(400, 400);
             angleMode(DEGREES);
+            v = createVector(100, 50);
         }
 
         function draw() {
             background(255);
-
-            // Translate the origin to the center of the canvas
             translate(width / 2, height / 2);
+            drawGrid();
 
-            // Draw axes
-            stroke(0);
-            line(-width / 2, 0, width / 2, 0); // X-axis
-            line(0, -height / 2, 0, height / 2); // Y-axis
+            // Update vector if dragging
+            if (dragging) {
+                v.x = mouseX - width / 2;
+                v.y = mouseY - height / 2;
+            }
 
-            // Define a vector in the standard basis
-            let v = createVector(100, 50);
-
-            // Draw the vector in standard basis
+            // Draw vector and handle
             drawVector(v, 'blue', 'V (Standard Basis)');
+            ellipse(v.x, v.y, handleRadius * 2);
 
-            // Define the orthonormal basis vectors, rotated 45 degrees
+            // Draw basis vectors and projections
             let basis1 = p5.Vector.fromAngle(radians(45)).mult(50);
             let basis2 = p5.Vector.fromAngle(radians(135)).mult(50);
-
-            // Draw the orthonormal basis vectors
             drawVector(basis1, 'red', 'Basis 1');
             drawVector(basis2, 'green', 'Basis 2');
-
-            // Project the vector onto the new basis
-            let proj1 = project(v, basis1);
-            let proj2 = project(v, basis2);
-
-            // Draw the projections
-            drawVector(proj1, 'orange', 'Projection on Basis 1');
-            drawVector(proj2, 'purple', 'Projection on Basis 2');
+            drawVector(project(v, basis1), 'orange', 'Projection on Basis 1');
+            drawVector(project(v, basis2), 'purple', 'Projection on Basis 2');
         }
 
-        // Function to draw vectors
+        function mousePressed() {
+            let d = dist(mouseX, mouseY, v.x + width / 2, v.y + height / 2);
+            if (d < handleRadius) {
+                dragging = true;
+            }
+        }
+
+        function mouseReleased() {
+            dragging = false;
+        }
+
         function drawVector(vec, color, label) {
             stroke(color);
             fill(color);
@@ -63,10 +68,19 @@
             text(label, vec.x + 5, vec.y + 5);
         }
 
-        // Function to project a vector onto a basis
         function project(vec, basis) {
             let scalar = vec.dot(basis) / basis.magSq();
             return p5.Vector.mult(basis, scalar);
+        }
+
+        function drawGrid() {
+            stroke(200);
+            for (let x = -width; x < width; x += 20) {
+                line(x, -height, x, height);
+            }
+            for (let y = -height; y < height; y += 20) {
+                line(-width, y, width, y);
+            }
         }
     </script>
 </body>
