@@ -17,14 +17,16 @@
     <script>
         let v, basis1, basis2;
         let draggingV = false, draggingBasis1 = false, draggingBasis2 = false;
+        let snapToGrid = true; // Enable snap to grid by default
         const handleRadius = 5;
+        const pixelsPerUnit = 20; // 20 pixels represent one grid unit
 
         function setup() {
             createCanvas(400, 400);
             angleMode(DEGREES);
-            v = createVector(100, 50);
-            basis1 = createVector(50, 0);
-            basis2 = createVector(0, 50);
+            v = createVector(3 * pixelsPerUnit, 3 * pixelsPerUnit); // Initial value of V (3,3)
+            basis1 = createVector(pixelsPerUnit, 0); // Initial value of Basis1 (1,0)
+            basis2 = createVector(0, pixelsPerUnit); // Initial value of Basis2 (0,1)
         }
 
         function draw() {
@@ -34,18 +36,7 @@
             drawAxes();
 
             // Update vectors if dragging
-            if (draggingV) {
-                v.x = mouseX - width / 2;
-                v.y = mouseY - height / 2;
-            } else if (draggingBasis1) {
-                basis1.x = mouseX - width / 2;
-                basis1.y = mouseY - height / 2;
-                basis2 = createVector(-basis1.y, basis1.x); // 90 degrees rotated
-            } else if (draggingBasis2) {
-                basis2.x = mouseX - width / 2;
-                basis2.y = mouseY - height / 2;
-                basis1 = createVector(basis2.y, -basis2.x); // 90 degrees rotated
-            }
+            updateVectors();
 
             // Draw vectors
             drawVector(v, 'blue');
@@ -60,13 +51,54 @@
             strokeWeight(1);
 
             // Draw handles
+            drawHandles();
+
+            // Display coordinates
+            displayCoordinates(v, basis1, basis2);
+        }
+
+        function updateVectors() {
+            if (draggingV) {
+                v.x = mouseX - width / 2;
+                v.y = mouseY - height / 2;
+                if (snapToGrid) {
+                    snapVector(v);
+                }
+            } else if (draggingBasis1) {
+                let newX = mouseX - width / 2;
+                let newY = mouseY - height / 2;
+                if (snapToGrid) {
+                    newX = round(newX / pixelsPerUnit) * pixelsPerUnit;
+                    newY = round(newY / pixelsPerUnit) * pixelsPerUnit;
+                }
+                if (!(newX === 0 && newY === 0)) {
+                    basis1.set(newX, newY);
+                }
+                basis2 = createVector(-basis1.y, basis1.x).setMag(basis2.mag()); // Maintain orthogonality
+            } else if (draggingBasis2) {
+                let newX = mouseX - width / 2;
+                let newY = mouseY - height / 2;
+                if (snapToGrid) {
+                    newX = round(newX / pixelsPerUnit) * pixelsPerUnit;
+                    newY = round(newY / pixelsPerUnit) * pixelsPerUnit;
+                }
+                if (!(newX === 0 && newY === 0)) {
+                    basis2.set(newX, newY);
+                }
+                basis1 = createVector(basis2.y, -basis2.x).setMag(basis1.mag()); // Maintain orthogonality
+            }
+        }
+
+        function drawHandles() {
             fill(255);
             ellipse(v.x, v.y, handleRadius * 2);
             ellipse(basis1.x, basis1.y, handleRadius * 2);
             ellipse(basis2.x, basis2.y, handleRadius * 2);
+        }
 
-            // Display coordinates
-            displayCoordinates(v, basis1, basis2);
+        function snapVector(vec) {
+            vec.x = round(vec.x / pixelsPerUnit) * pixelsPerUnit;
+            vec.y = round(vec.y / pixelsPerUnit) * pixelsPerUnit;
         }
 
         function mousePressed() {
@@ -101,11 +133,17 @@
 
         function drawGrid() {
             stroke(200);
-            for (let x = -width; x < width; x += 20) {
+            for (let x = -width; x < width; x += pixelsPerUnit) {
                 line(x, -height, x, height);
+                if (x !== 0) { // Avoid labeling the origin
+                    text(x / pixelsPerUnit, x, 10);
+                }
             }
-            for (let y = -height; y < height; y += 20) {
+            for (let y = -height; y < height; y += pixelsPerUnit) {
                 line(-width, y, width, y);
+                if (y !== 0) { // Avoid labeling the origin
+                    text(-y / pixelsPerUnit, -10, y);
+                }
             }
         }
 
@@ -118,8 +156,10 @@
         }
 
         function displayCoordinates(vec, basis1, basis2) {
-            let coordsStandard = `Standard: (${vec.x.toFixed(2)}, ${vec.y.toFixed(2)})`;
-            let coordsBasis = `Basis: (${project(vec, basis1).mag().toFixed(2)}, ${project(vec, basis2).mag().toFixed(2)})`;
+            let coordsStandard = `Standard: (${(vec.x / pixelsPerUnit).toFixed(2)}, ${(-vec.y / pixelsPerUnit).toFixed(2)})`; // Inverted y-axis
+            let coordBasis1 = vec.dot(basis1) / basis1.magSq();
+            let coordBasis2 = vec.dot(basis2) / basis2.magSq();
+            let coordsBasis = `Basis: (${coordBasis1.toFixed(2)}, ${coordBasis2.toFixed(2)})`;
             fill(0);
             text(coordsStandard, 10 - width / 2, 20 - height / 2);
             text(coordsBasis, 10 - width / 2, 40 - height / 2);
