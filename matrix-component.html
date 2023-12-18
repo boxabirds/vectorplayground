@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Matrix Vector Component</title>
+    <style>
+        .vector-container {
+            width: 800px;
+            height: 800px;
+        }
+    </style>
+
+</head>
+<body>
+    <matrix-vector></matrix-vector>
+
+    <script src="matrix-vector-component.js"></script>
+
+    <script>
+        // Example: Listening to changes
+        const component = document.querySelector('matrix-vector');
+        component.addEventListener('change', (event) => {
+            console.log('Matrix:', event.detail.matrix);
+            console.log('Vector:', event.detail.vector);
+        });
+    </script>
+
+<div class="vector-container">
+    <vector-grid></vector-grid>
+</div>
+
+<script src="vector-grid-component.js"></script>
+
+</body>
+</html>
