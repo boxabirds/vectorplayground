@@ -17,9 +17,10 @@
     <script>
         let v, basis1, basis2;
         let draggingV = false, draggingBasis1 = false, draggingBasis2 = false;
-        let snapToGrid = true; // Enable snap to grid by default
+        let snapToGrid = false; // Enable snap to grid by default
         const handleRadius = 5;
         const pixelsPerUnit = 20; // 20 pixels represent one grid unit
+        const gridLimit = 20; 
 
         function setup() {
             createCanvas(400, 400);
@@ -29,10 +30,24 @@
             basis2 = createVector(0, pixelsPerUnit); // Initial value of Basis2 (0,1)
         }
 
+        function drawNewBasisGrid() {
+            stroke('lightgreen');
+            for (let i = -gridLimit; i <= gridLimit; i++) {
+                let line1Start = p5.Vector.add(p5.Vector.mult(basis1, i), p5.Vector.mult(basis2, -gridLimit));
+                let line1End = p5.Vector.add(p5.Vector.mult(basis1, i), p5.Vector.mult(basis2, gridLimit));
+                line(line1Start.x, line1Start.y, line1End.x, line1End.y);
+
+                let line2Start = p5.Vector.add(p5.Vector.mult(basis2, i), p5.Vector.mult(basis1, -gridLimit));
+                let line2End = p5.Vector.add(p5.Vector.mult(basis2, i), p5.Vector.mult(basis1, gridLimit));
+                line(line2Start.x, line2Start.y, line2End.x, line2End.y);
+            }
+        }
+
         function draw() {
             background(255);
             translate(width / 2, height / 2);
             drawGrid();
+            drawNewBasisGrid();
             drawAxes();
 
             // Update vectors if dragging
