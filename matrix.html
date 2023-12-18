@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Editable Matrix and Vector</title>
+    <style>
+        body {
+            padding-top: 30px;
+            padding-left: 30px;
+        }
+
+        .matrix-vector-container {
+            display: flex;
+            align-items: center;
+            font-family: 'Times New Roman', Times, serif;
+        }
+
+        .matrix-container, .vector-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .matrix {
+            display: grid;
+            grid-template-columns: repeat(2, auto);
+        }
+
+        .bracket {
+            font-size: 2em;
+            user-select: none;
+        }
+
+        input {
+            font-family: inherit;
+            width: 40px; /* Adjusted width */
+            text-align: center;
+            border: none;
+            background-color: transparent;
+            font-size: 1.2em;
+            outline: none;
+            padding: 0; /* Remove padding */
+        }
+
+        .matrix-cell, .vector-cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="matrix-vector-container">
+        <div class="matrix-container">
+            <div class="bracket">(</div>
+            <div class="matrix">
+                <div class="matrix-cell"><input id="a11" value="1" autofocus></div>
+                <div class="matrix-cell"><input id="a12" value="2"></div>
+                <div class="matrix-cell"><input id="a21" value="3"></div>
+                <div class="matrix-cell"><input id="a22" value="4"></div>
+            </div>
+            <div class="bracket">)</div>
+        </div>
+
+        <div class="vector-container">
+            <div class="bracket">[</div>
+            <div class="vector">
+                <div class="vector-cell"><input id="v1" value="5"></div>
+                <div class="vector-cell"><input id="v2" value="6"></div>
+            </div>
+            <div class="bracket">]</div>
+        </div>
+    </div>
+</body>
+</html>
