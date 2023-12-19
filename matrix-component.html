@@ -74,15 +74,43 @@
                 const draggedElement = document.getElementById(id);
                 const container = document.getElementById('matrix-container');
                 const afterElement = getDragAfterElement(container, e.clientX);
+                const draggedComponent = matrixComponents.find(comp => comp.id === id);
 
                 if (afterElement) {
                     container.insertBefore(draggedElement, afterElement);
+
+                    // Mirror the change in the matrixComponents array
+                    moveComponentInArray(draggedComponent, afterElement);
                 } else {
                     container.appendChild(draggedElement);
+
+                    // Mirror the change in the matrixComponents array
+                    moveComponentToEndOfArray(draggedComponent);
                 }
+
                 insertionCursor.remove();
                 calculateProduct();
             }
+
+            function moveComponentInArray(component, beforeElement) {
+                const index = matrixComponents.indexOf(component);
+                const beforeIndex = matrixComponents.findIndex(comp => comp.id === beforeElement.id);
+
+                if (index !== -1) {
+                    matrixComponents.splice(index, 1); // Remove the component from its current position
+                    matrixComponents.splice(beforeIndex, 0, component); // Insert it before the afterElement
+                }
+            }
+
+            function moveComponentToEndOfArray(component) {
+                const index = matrixComponents.indexOf(component);
+
+                if (index !== -1) {
+                    matrixComponents.splice(index, 1); // Remove the component from its current position
+                    matrixComponents.push(component); // Add it to the end of the array
+                }
+            }
+
 
             function getDragAfterElement(container, x) {
                 const draggableElements = [...container.querySelectorAll('.draggable:not(.dragging)')];
