@@ -1,34 +1,65 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Test Matrix Vector Component</title>
-    <style>
-        .vector-container {
-            width: 800px;
-            height: 800px;
-        }
-    </style>
-
+    <title>Test Matrix Component</title>
 </head>
 <body>
-    <matrix-vector></matrix-vector>
+    <div id="matrix-container">
+        <!-- Matrix components will be added here -->
+    </div>
+    <button id="add-matrix-btn">+</button> <!-- Button to add new matrix components -->
+    <div>
+        <p>Product Matrix:</p>
+        <matrix-component id="product-matrix" readonly></matrix-component> <!-- Product matrix component -->
+    </div>
 
-    <script src="matrix-vector-component.js"></script>
+    <script src="matrix-component.js"></script>
 
     <script>
-        // Example: Listening to changes
-        const component = document.querySelector('matrix-vector');
-        component.addEventListener('change', (event) => {
-            console.log('Matrix:', event.detail.matrix);
-            console.log('Vector:', event.detail.vector);
+        document.addEventListener('DOMContentLoaded', () => {
+            let matrixComponents = [];
+
+            // Function to add a new matrix component
+            function addMatrixComponent() {
+                const newComponent = document.createElement('matrix-component');
+                matrixComponents.push(newComponent);
+
+                // Add an event listener to the new component
+                newComponent.addEventListener('change', () => {
+                    calculateProduct();
+                });
+
+                document.getElementById('matrix-container').appendChild(newComponent);
+                calculateProduct(); // Initial calculation for the product matrix
+            }
+
+            // Function to calculate the product of all matrices
+            function calculateProduct() {
+                let productMatrix = null;
+
+                matrixComponents.forEach(comp => {
+                    const matrix = comp.matrix;
+                    productMatrix = productMatrix ? matrixMultiply(productMatrix, matrix) : matrix;
+                });
+                
+                console.log("product matrix = '" + productMatrix + "'")
+                // Update the product matrix component
+                const productComponent = document.getElementById('product-matrix');
+                productComponent.matrix = productMatrix;
+            }
+
+            // Function to multiply two matrices
+            function matrixMultiply(A, B) {
+                // Implement matrix multiplication logic here
+                // Return the resulting matrix
+            }
+
+            // Add event listener to button
+            document.getElementById('add-matrix-btn').addEventListener('click', addMatrixComponent);
+
+            // Initially add one matrix component
+            addMatrixComponent();
         });
     </script>
-
-<div class="vector-container">
-    <vector-grid></vector-grid>
-</div>
-
-<script src="vector-grid-component.js"></script>
-
 </body>
 </html>
