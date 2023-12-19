@@ -4,19 +4,25 @@
     <title>Test Matrix Component</title>
     <style>
         .draggable {
-            /* border: 1px solid lightgrey; */
             padding: 5px;
             border-radius: 5px;
             cursor: grab;
+            
         }
 
-        /* .draggable:hover {
-            background-color: #f2f2f2;
-        } */
 
         /* Style for dragging */
         .dragging {
             cursor: grabbing;
+        }
+
+        .insertion-cursor {
+            width: 4px; /* Thickness of the cursor */
+            background-color: black; /* Color of the cursor */
+            height: 100%; /* Full container height */
+            margin: 0 5px; /* Spacing around the cursor */
+            border-radius: 2px; /* Slightly rounded corners for aesthetics */
+            display: inline-block; /* Necessary for proper positioning */
         }
     </style>
 </head>
@@ -35,6 +41,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             let matrixComponents = [];
+            let insertionCursor = document.createElement('div');
+            insertionCursor.classList.add('insertion-cursor');
 
             function handleDragStart(e) {
                 e.dataTransfer.setData('text/plain', e.target.id);
@@ -42,24 +50,52 @@
                 e.target.classList.add('dragging');
             }
 
-            function handleDragEnd(e) {
-                e.target.classList.remove('dragging');
-            }
-
             function handleDragOver(e) {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
+
+                const container = document.getElementById('matrix-container');
+                const afterElement = getDragAfterElement(container, e.clientX);
+                if (afterElement) {
+                    container.insertBefore(insertionCursor, afterElement);
+                } else if (!container.contains(insertionCursor)) {
+                    container.appendChild(insertionCursor);
+                }
+            }
+
+            function handleDragEnd(e) {
+                e.target.classList.remove('dragging');
+                insertionCursor.remove();
             }
 
             function handleDrop(e) {
                 e.preventDefault();
                 const id = e.dataTransfer.getData('text/plain');
                 const draggedElement = document.getElementById(id);
-                if (e.target !== draggedElement && e.target.classList.contains('draggable')) {
-                    const container = document.getElementById('matrix-container');
-                    container.insertBefore(draggedElement, e.target);
-                    calculateProduct();
+                const container = document.getElementById('matrix-container');
+                const afterElement = getDragAfterElement(container, e.clientX);
+
+                if (afterElement) {
+                    container.insertBefore(draggedElement, afterElement);
+                } else {
+                    container.appendChild(draggedElement);
                 }
+                insertionCursor.remove();
+                calculateProduct();
+            }
+
+            function getDragAfterElement(container, x) {
+                const draggableElements = [...container.querySelectorAll('.draggable:not(.dragging)')];
+
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = x - box.left - box.width / 2;
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
             }
 
             function addMatrixComponent() {
@@ -79,8 +115,8 @@
                 calculateProduct();
             }
 
-                        // Function to calculate the product of all matrices
-                        function calculateProduct() {
+            // Function to calculate the product of all matrices
+            function calculateProduct() {
                 let productMatrix = null;
 
                 matrixComponents.forEach(comp => {
@@ -88,7 +124,6 @@
                     productMatrix = productMatrix ? matrixMultiply(productMatrix, matrix) : matrix;
                 });
                 
-                console.log("product matrix = '" + productMatrix + "'")
                 // Update the product matrix component
                 const productComponent = document.getElementById('product-matrix');
                 productComponent.matrix = productMatrix;
@@ -99,8 +134,6 @@
                 // Implement matrix multiplication logic here
                 // Return the resulting matrix
             }
-
-
 
             document.getElementById('add-matrix-btn').addEventListener('click', addMatrixComponent);
             addMatrixComponent();
