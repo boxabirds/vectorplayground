@@ -7,10 +7,10 @@
     <div id="matrix-container">
         <!-- Matrix components will be added here -->
     </div>
-    <button id="add-matrix-btn">+</button> <!-- Button to add new matrix components -->
+    <button id="add-matrix-btn">+</button>
     <div>
         <p>Product Matrix:</p>
-        <matrix-component id="product-matrix" readonly></matrix-component> <!-- Product matrix component -->
+        <matrix-component id="product-matrix" readonly></matrix-component>
     </div>
 
     <script src="matrix-component.js"></script>
@@ -19,18 +19,41 @@
         document.addEventListener('DOMContentLoaded', () => {
             let matrixComponents = [];
 
-            // Function to add a new matrix component
+            function handleDragStart(e) {
+                e.dataTransfer.setData('text/plain', e.target.id);
+                e.dataTransfer.effectAllowed = 'move';
+            }
+
+            function handleDragOver(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            }
+
+            function handleDrop(e) {
+                e.preventDefault();
+                const id = e.dataTransfer.getData('text/plain');
+                const draggedElement = document.getElementById(id);
+                if (e.target !== draggedElement && e.target.classList.contains('draggable')) {
+                    const container = document.getElementById('matrix-container');
+                    container.insertBefore(draggedElement, e.target);
+                    calculateProduct();
+                }
+            }
+
             function addMatrixComponent() {
                 const newComponent = document.createElement('matrix-component');
+                newComponent.id = 'matrix-' + matrixComponents.length;
+                newComponent.classList.add('draggable');
+                newComponent.setAttribute('draggable', true);
+
+                newComponent.addEventListener('dragstart', handleDragStart);
+                newComponent.addEventListener('dragover', handleDragOver);
+                newComponent.addEventListener('drop', handleDrop);
+
                 matrixComponents.push(newComponent);
-
-                // Add an event listener to the new component
-                newComponent.addEventListener('change', () => {
-                    calculateProduct();
-                });
-
+                newComponent.addEventListener('change', calculateProduct);
                 document.getElementById('matrix-container').appendChild(newComponent);
-                calculateProduct(); // Initial calculation for the product matrix
+                calculateProduct();
             }
 
             // Function to calculate the product of all matrices
@@ -54,10 +77,9 @@
                 // Return the resulting matrix
             }
 
-            // Add event listener to button
-            document.getElementById('add-matrix-btn').addEventListener('click', addMatrixComponent);
 
-            // Initially add one matrix component
+
+            document.getElementById('add-matrix-btn').addEventListener('click', addMatrixComponent);
             addMatrixComponent();
         });
     </script>
