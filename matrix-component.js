@@ -107,6 +107,7 @@ class MatrixComponent extends HTMLElement {
     }
 
     set matrix(newMatrix) {
+        console.log('Setting matrix with:', newMatrix);
         if (newMatrix && Array.isArray(newMatrix) && newMatrix.every(row => Array.isArray(row))) {
             this._matrix = newMatrix;
             this.render();
@@ -120,12 +121,19 @@ class MatrixComponent extends HTMLElement {
     }
 
     set readonly(value) {
-        this._readonly = Boolean(value);
-        if (this._readonly) {
-            this.setAttribute('readonly', '');
-        } else {
-            this.removeAttribute('readonly');
+        const isReadOnly = Boolean(value);
+    
+        // Check if the current state is already what we want
+        if (this._readonly !== isReadOnly) {
+            this._readonly = isReadOnly;
+    
+            if (this._readonly) {
+                this.setAttribute('readonly', '');
+            } else {
+                this.removeAttribute('readonly');
+            }
         }
+    
         this.render();
     }
 }
