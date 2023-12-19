@@ -2,6 +2,23 @@
 <html>
 <head>
     <title>Test Matrix Component</title>
+    <style>
+        .draggable {
+            /* border: 1px solid lightgrey; */
+            padding: 5px;
+            border-radius: 5px;
+            cursor: grab;
+        }
+
+        /* .draggable:hover {
+            background-color: #f2f2f2;
+        } */
+
+        /* Style for dragging */
+        .dragging {
+            cursor: grabbing;
+        }
+    </style>
 </head>
 <body>
     <div id="matrix-container">
@@ -22,6 +39,11 @@
             function handleDragStart(e) {
                 e.dataTransfer.setData('text/plain', e.target.id);
                 e.dataTransfer.effectAllowed = 'move';
+                e.target.classList.add('dragging');
+            }
+
+            function handleDragEnd(e) {
+                e.target.classList.remove('dragging');
             }
 
             function handleDragOver(e) {
@@ -47,6 +69,7 @@
                 newComponent.setAttribute('draggable', true);
 
                 newComponent.addEventListener('dragstart', handleDragStart);
+                newComponent.addEventListener('dragend', handleDragEnd);
                 newComponent.addEventListener('dragover', handleDragOver);
                 newComponent.addEventListener('drop', handleDrop);
 
@@ -56,8 +79,8 @@
                 calculateProduct();
             }
 
-            // Function to calculate the product of all matrices
-            function calculateProduct() {
+                        // Function to calculate the product of all matrices
+                        function calculateProduct() {
                 let productMatrix = null;
 
                 matrixComponents.forEach(comp => {

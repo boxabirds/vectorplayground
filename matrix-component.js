@@ -37,18 +37,27 @@ class MatrixComponent extends HTMLElement {
                 .matrix-container {
                     display: inline-flex;
                     align-items: center;
+                    flex-wrap: nowrap; /* Prevent flex items from wrapping */
+                    overflow: hidden; /* Hide overflow */
+                    padding: 5px; /* Add padding */
+                    border: 1px solid lightgrey; /* Add border */
+                    border-radius: 5px; /* Round corners */
+                    box-sizing: border-box; /* Include padding and border in the element's total width and height */
                 }
-        
+                
                 .matrix {
                     display: grid;
                     grid-template-columns: repeat(2, auto);
+                    padding: 5px; /* Add padding */
+                    box-sizing: border-box; /* Include padding in the element's total width and height */
                 }
-        
+                
                 .bracket {
                     font-size: 2em;
                     user-select: none;
+                    padding: 0 5px; /* Add padding around brackets */
                 }
-        
+                
                 input {
                     font-family: inherit;
                     width: 40px;
@@ -58,13 +67,16 @@ class MatrixComponent extends HTMLElement {
                     font-size: 1.2em;
                     outline: none;
                     padding: 0;
+                    box-sizing: border-box; /* Include padding in the element's total width and height */
                 }
-        
+                
                 .matrix-cell {
                     display: flex;
                     justify-content: center;
                     align-items: center;
+                    margin: 0 2px; /* Add margin to ensure cells do not touch each other */
                 }
+                
         
                 </style>
                 <div class="matrix-container">
