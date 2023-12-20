@@ -33,7 +33,7 @@
     <button id="add-matrix-btn">+</button>
     <div>
         <p>Product Matrix:</p>
-        <matrix-component id="product-matrix" readonly></matrix-component>
+        <matrix-component id="product-matrix" rows=4 cols=4 readonly></matrix-component>
     </div>
 
     <script src="matrix-component.js"></script>
@@ -129,6 +129,8 @@
             function addMatrixComponent() {
                 const newComponent = document.createElement('matrix-component');
                 newComponent.id = 'matrix-' + matrixComponents.length;
+                newComponent.rows = 4;
+                newComponent.cols = 4;
                 newComponent.classList.add('draggable');
                 newComponent.setAttribute('draggable', true);
 
@@ -149,6 +151,7 @@
                 var count = 0;
                 matrixComponents.forEach(comp => {
                     const matrix = comp.matrix;
+                    console.log("matrix: " + matrix)
                     productMatrix = productMatrix ? matrixMultiply(productMatrix, matrix) : matrix;
                     console.log("productMatrix: " + productMatrix);
                 });

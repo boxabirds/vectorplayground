@@ -1,63 +1,80 @@
 class MatrixComponent extends HTMLElement {
     static get observedAttributes() {
-        return ['readonly']; // Observe the readonly attribute
+        return ['readonly', 'rows', 'cols']; // Observe readonly, rows, and cols attributes
     }
 
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        this._matrix = [[1, 0], [0, 1]]; // Default identity matrix
-        this._readonly = false; // default if not specified
+        this._matrix = this.initializeMatrix();
+        this._readonly = false;
     }
 
     connectedCallback() {
-        this._readonly = this.hasAttribute('readonly'); // Set readonly based on the attribute
+        this._readonly = this.hasAttribute('readonly');
+        this._matrix = this.initializeMatrix();
         this.render();
         if (!this._readonly) {
             this.setupListeners();
         }
     }
+
     attributeChangedCallback(name, oldValue, newValue) {
         if (name === 'readonly') {
             this.readonly = this.hasAttribute('readonly');
+        } else if (name === 'rows' || name === 'cols') {
+            this._matrix = this.initializeMatrix();
+            this.render();
         }
+    }
+
+    initializeMatrix() {
+        const rows = Math.max(1, parseInt(this.getAttribute('rows')) || 2);
+        const cols = Math.max(1, parseInt(this.getAttribute('cols')) || 2);
+        return Array.from({ length: rows }, (_, i) =>
+            Array.from({ length: cols }, (_, j) => i === j ? 1 : 0)
+        );
     }
 
     render() {
         if (this._matrix && Array.isArray(this._matrix) && this._matrix.every(row => Array.isArray(row))) {
+            
             let content = this._matrix.map((row, i) => row.map((val, j) =>
                 `<div class="matrix-cell">
                     ${this._readonly ? `<input id="m${i}${j}" value="${val}" readonly>` : `<input id="m${i}${j}" value="${val}">`}
                 </div>`
             ).join('')).join('');
 
+            const cols = this._matrix[0].length;
             this.shadowRoot.innerHTML = `
                 <style>
-
                 .matrix-container {
                     display: inline-flex;
                     align-items: center;
-                    flex-wrap: nowrap; /* Prevent flex items from wrapping */
-                    overflow: hidden; /* Hide overflow */
-                    padding: 5px; /* Add padding */
-                    border: 1px solid lightgrey; /* Add border */
-                    border-radius: 5px; /* Round corners */
-                    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+                    flex-wrap: nowrap;
+                    overflow: hidden;
+                    padding: 5px;
+                    border: 1px solid lightgrey;
+                    border-radius: 5px;
+                    box-sizing: border-box;
+                    --bracket-size: 1em;
                 }
-                
                 .matrix {
                     display: grid;
-                    grid-template-columns: repeat(2, auto);
-                    padding: 5px; /* Add padding */
-                    box-sizing: border-box; /* Include padding in the element's total width and height */
+                    grid-template-columns: repeat(${cols}, auto);
+                    padding: 5px;
+                    gap: 2px
+                    box-sizing: border-box;
+                    margin-left: -15px;
+                    margin-right: -15px;
                 }
-                
                 .bracket {
-                    font-size: 2em;
+                    font-size: var(--bracket-size);
+                    font-weight: lighter
                     user-select: none;
-                    padding: 0 5px; /* Add padding around brackets */
+                    padding: 0 2px;
+                    margin-top: -15px;
                 }
-                
                 input {
                     font-family: inherit;
                     width: 40px;
@@ -67,39 +84,42 @@ class MatrixComponent extends HTMLElement {
                     font-size: 1.2em;
                     outline: none;
                     padding: 0;
-                    box-sizing: border-box; /* Include padding in the element's total width and height */
+                    box-sizing: border-box;
                 }
-                
                 .matrix-cell {
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    margin: 0 2px; /* Add margin to ensure cells do not touch each other */
+                    margin: 0 2px;
                 }
-                
-        
                 </style>
                 <div class="matrix-container">
-                    <div class="bracket">(</div>
+                    <div class="bracket">\u005B</div>
                     <div class="matrix">${content}</div>
-                    <div class="bracket">)</div>
+                    <div class="bracket">\u005D</div>
                 </div>`;
+                const rows = this._matrix.length;
+                const bracketSize = `${rows * 1.7}em`; // adjust multiplier as needed
+            
+                // ensure the bracket size is same height as number of rows
+                this.shadowRoot.querySelector('.matrix-container').style.setProperty('--bracket-size', bracketSize);
         } else {
             console.error('Invalid matrix structure:', this._matrix);
         }
     }
 
     setupListeners() {
-        if (!this._readonly && this._matrix && Array.isArray(this._matrix) && this._matrix.every(row => Array.isArray(row))) {
-            for (let i = 0; i < this._matrix.length; i++) {
-                for (let j = 0; j < this._matrix[i].length; j++) {
-                    this.shadowRoot.getElementById(`m${i}${j}`).addEventListener('input', (event) => {
-                        this._matrix[i][j] = parseFloat(event.target.value);
-                        this.dispatchEvent(new CustomEvent('change', { detail: { matrix: this._matrix } }));
-                    });
-                }
-            }
-        }
+        this.shadowRoot.querySelectorAll('input').forEach(input => {
+            input.removeEventListener('input', this.handleInput);
+            input.addEventListener('input', this.handleInput.bind(this));
+        });
+    }
+
+    handleInput(event) {
+        const id = event.target.id;
+        const [_, i, j] = id.match(/m(\d+)(\d+)/).map(Number);
+        this._matrix[i][j] = parseFloat(event.target.value) || 0;
+        this.dispatchEvent(new CustomEvent('change', { detail: { matrix: this._matrix } }));
     }
 
     get matrix() {
@@ -107,8 +127,7 @@ class MatrixComponent extends HTMLElement {
     }
 
     set matrix(newMatrix) {
-        console.log('Setting matrix with:', newMatrix);
-        if (newMatrix && Array.isArray(newMatrix) && newMatrix.every(row => Array.isArray(row))) {
+        if (Array.isArray(newMatrix) && newMatrix.every(row => Array.isArray(row))) {
             this._matrix = newMatrix;
             this.render();
         } else {
@@ -135,6 +154,25 @@ class MatrixComponent extends HTMLElement {
         }
     
         this.render();
+    }
+
+
+    get rows() {
+        return this._matrix.length;
+    }
+
+    set rows(value) {
+        const numRows = Math.max(1, Number(value));
+        this.setAttribute('rows', numRows);
+    }
+
+    get cols() {
+        return this._matrix[0].length;
+    }
+
+    set cols(value) {
+        const numCols = Math.max(1, Number(value));
+        this.setAttribute('cols', numCols);
     }
 }
 
