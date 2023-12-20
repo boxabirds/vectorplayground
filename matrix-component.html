@@ -33,12 +33,15 @@
     <button id="add-matrix-btn">+</button>
     <div>
         <p>Product Matrix:</p>
-        <matrix-component id="product-matrix" rows=4 cols=4 readonly></matrix-component>
+        <matrix-component id="product-matrix" readonly></matrix-component>
     </div>
 
     <script src="matrix-component.js"></script>
 
     <script>
+        const MATRIX_ROWS = 4;
+        const MATRIX_COLS = 4;
+
         document.addEventListener('DOMContentLoaded', () => {
             let matrixComponents = [];
             let insertionCursor = document.createElement('div');
@@ -129,8 +132,8 @@
             function addMatrixComponent() {
                 const newComponent = document.createElement('matrix-component');
                 newComponent.id = 'matrix-' + matrixComponents.length;
-                newComponent.rows = 4;
-                newComponent.cols = 4;
+                newComponent.setAttribute('rows', MATRIX_ROWS);
+                newComponent.setAttribute('cols', MATRIX_COLS);
                 newComponent.classList.add('draggable');
                 newComponent.setAttribute('draggable', true);
 
@@ -158,6 +161,9 @@
                 
                 // Update the product matrix component
                 const productComponent = document.getElementById('product-matrix');
+                productComponent.setAttribute('rows', MATRIX_ROWS);
+                productComponent.setAttribute('cols', MATRIX_COLS);
+
                 console.log('Final productMatrix:', productMatrix);
                 productComponent.matrix = productMatrix;
             }
