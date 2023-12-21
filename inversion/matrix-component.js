@@ -1,6 +1,6 @@
 class MatrixComponent extends HTMLElement {
     static get observedAttributes() {
-        return ['readonly', 'rows', 'cols']; // Observe readonly, rows, and cols attributes
+        return ['readonly', 'rows', 'cols', 'max-selection']; // Add 'max-selection' to observed attributes
     }
  
     constructor() {
@@ -9,6 +9,15 @@ class MatrixComponent extends HTMLElement {
         this._matrix = this.initializeMatrix();
         this._readonly = false;
         this.selectedRows = new Set(); // Keep track of selected rows
+        this._maxSelection = 1; // Default max selection is 1
+    }
+
+    clearSelections() {
+        this.selectedRows.forEach(rowIndex => {
+            this.selectedRows.delete(rowIndex);
+            this.dispatchRowSelectionEvent(rowIndex, false);
+        });
+        this.updateRowStyles();
     }
 
     connectedCallback() {
@@ -25,8 +34,19 @@ class MatrixComponent extends HTMLElement {
     toggleRowSelection(rowIndex) {
         if (this.selectedRows.has(rowIndex)) {
             this.selectedRows.delete(rowIndex);
+            this.dispatchRowSelectionEvent(rowIndex, false);
         } else {
-            this.selectedRows.add(rowIndex);
+            if (this.selectedRows.size < this._maxSelection) {
+                this.selectedRows.add(rowIndex);
+                this.dispatchRowSelectionEvent(rowIndex, true);
+            } else {
+                // Optionally, handle the case where the max selection is reached
+                console.warn('Maximum selection reached');
+                // You can clear the current selection and select the new row
+                // Or you can choose not to select the new row until the user manually deselects
+                // Uncomment the line below to clear and select the new row
+                // this.clearSelections(); this.selectedRows.add(rowIndex);
+            }
         }
         this.updateRowStyles();
     }
@@ -34,10 +54,18 @@ class MatrixComponent extends HTMLElement {
     updateRowStyles() {
         const rows = this.shadowRoot.querySelectorAll('.matrix-row');
         rows.forEach((row, index) => {
-            row.style.background = this.selectedRows.has(index) ? 'rgba(255, 255, 0, 0.2)' : 'none';
+            if (this.selectedRows.has(index)) {
+                row.style.background = 'rgba(255, 255, 0, 0.2)'; // light yellow background
+                row.style.border = '3px solid goldenrod'; // dark yellow border
+                row.style.borderRadius = '3px';
+            } else {
+                row.style.background = 'none';
+                row.style.border = 'none'; // Remove border if not selected
+                row.style.borderRadius = '0';
+            }
         });
     }
-    // Dispatch custom events for row selection/deselection
+        // Dispatch custom events for row selection/deselection
     dispatchRowSelectionEvent(rowIndex, isSelected) {
         const eventName = isSelected ? 'rowselected' : 'rowdeselected';
         this.dispatchEvent(new CustomEvent(eventName, { detail: { rowIndex } }));
@@ -84,6 +112,11 @@ class MatrixComponent extends HTMLElement {
         } else if (name === 'rows' || name === 'cols') {
             this._matrix = this.initializeMatrix();
             this.render();
+        } else if (name === 'max-selection') {
+            this._maxSelection = parseInt(newValue, 10) || 1; // Default to 1 if NaN
+            if (this.selectedRows.size > this._maxSelection) {
+                this.clearSelections();
+            }
         }
     }
 
@@ -133,6 +166,7 @@ class MatrixComponent extends HTMLElement {
                 .bracket {
                     margin-top: -15px;
                     font-size: var(--bracket-size);
+                    font-family: "Arial Narrow", Arial, Helvetica, sans-serif;
                     font-weight: lighter;
                     user-select: none;
                     /* Removed padding to ensure brackets fit snugly */
@@ -245,6 +279,15 @@ class MatrixComponent extends HTMLElement {
         const numCols = Math.max(1, Number(value));
         this.setAttribute('cols', numCols);
     }
+    get maxSelection() {
+        return this._maxSelection;
+    }
+
+    set maxSelection(value) {
+        this._maxSelection = value;
+        this.setAttribute('max-selection', value.toString());
+    }
+
 }
 
 customElements.define('matrix-component', MatrixComponent);
