@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Matrix Component Test</title>
+    <script src="matrix-component.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        matrix-component {
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <matrix-component id="matrix1" rows="4" cols="4" readonly></matrix-component>
+    <matrix-component id="matrix2" rows="4" cols="4" readonly></matrix-component>
+
+    <script>
+        // Example of how to listen for selection events
+        document.querySelectorAll('matrix-component').forEach(matrix => {
+            matrix.addEventListener('rowselected', (event) => {
+                console.log(`Row ${event.detail.rowIndex} selected in matrix ${matrix.id}`);
+            });
+            matrix.addEventListener('rowdeselected', (event) => {
+                console.log(`Row ${event.detail.rowIndex} deselected in matrix ${matrix.id}`);
+            });
+        });
+
+        // Example of how to programmatically select/deselect rows
+        setTimeout(() => {
+            const matrix1 = document.getElementById('matrix1');
+            matrix1.selectRow(1);
+            matrix1.deselectRow(0);
+        }, 3000);
+    </script>
+</body>
+</html>
