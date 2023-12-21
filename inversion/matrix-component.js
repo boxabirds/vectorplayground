@@ -44,16 +44,22 @@ class MatrixComponent extends HTMLElement {
     }
     
     // Method to externally select/deselect rows
-    selectRow(rowIndex) {
+    selectRow(rowIndex, isUserAction = true) {
         this.selectedRows.add(rowIndex);
         this.updateRowStyles();
+        if (isUserAction) {
+            this.dispatchRowSelectionEvent(rowIndex, true);
+        }
     }
 
-    deselectRow(rowIndex) {
+    deselectRow(rowIndex, isUserAction = true) {
         this.selectedRows.delete(rowIndex);
         this.updateRowStyles();
+        if (isUserAction) {
+            this.dispatchRowSelectionEvent(rowIndex, false);
+        }
     }
-
+    
 
 
     onCellClick(event) {
@@ -62,11 +68,15 @@ class MatrixComponent extends HTMLElement {
             const row = event.target.closest('.matrix-row');
             const rowIndex = Array.from(this.shadowRoot.querySelectorAll('.matrix-row')).indexOf(row);
             if (rowIndex !== -1) {
-                this.toggleRowSelection(rowIndex);
-                this.dispatchRowSelectionEvent(rowIndex, this.selectedRows.has(rowIndex));
+                if (this.selectedRows.has(rowIndex)) {
+                    this.deselectRow(rowIndex); // isUserAction is true by default
+                } else {
+                    this.selectRow(rowIndex); // isUserAction is true by default
+                }
             }
         }
     }
+ 
     
     attributeChangedCallback(name, oldValue, newValue) {
         if (name === 'readonly') {
