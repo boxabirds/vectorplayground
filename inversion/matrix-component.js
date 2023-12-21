@@ -10,6 +10,7 @@ class MatrixComponent extends HTMLElement {
         this._readonly = false;
         this.selectedRows = new Set(); // Keep track of selected rows
         this._maxSelection = 1; // Default max selection is 1
+        this.selectionOrder = [];
     }
 
     clearSelections() {
@@ -30,42 +31,19 @@ class MatrixComponent extends HTMLElement {
         this.shadowRoot.addEventListener('click', this.onCellClick.bind(this));
     }
 
-    // Toggle row selection
-    toggleRowSelection(rowIndex) {
-        if (this.selectedRows.has(rowIndex)) {
-            this.selectedRows.delete(rowIndex);
-            this.dispatchRowSelectionEvent(rowIndex, false);
-        } else {
-            if (this.selectedRows.size < this._maxSelection) {
-                this.selectedRows.add(rowIndex);
-                this.dispatchRowSelectionEvent(rowIndex, true);
-            } else {
-                // Optionally, handle the case where the max selection is reached
-                console.warn('Maximum selection reached');
-                // You can clear the current selection and select the new row
-                // Or you can choose not to select the new row until the user manually deselects
-                // Uncomment the line below to clear and select the new row
-                // this.clearSelections(); this.selectedRows.add(rowIndex);
-            }
-        }
-        this.updateRowStyles();
-    }
+
 
     updateRowStyles() {
         const rows = this.shadowRoot.querySelectorAll('.matrix-row');
         rows.forEach((row, index) => {
             if (this.selectedRows.has(index)) {
-                row.style.background = 'rgba(255, 255, 0, 0.2)'; // light yellow background
-                row.style.border = '3px solid goldenrod'; // dark yellow border
-                row.style.borderRadius = '3px';
+                row.classList.add('selected-row');
             } else {
-                row.style.background = 'none';
-                row.style.border = 'none'; // Remove border if not selected
-                row.style.borderRadius = '0';
+                row.classList.remove('selected-row');
             }
         });
     }
-        // Dispatch custom events for row selection/deselection
+            // Dispatch custom events for row selection/deselection
     dispatchRowSelectionEvent(rowIndex, isSelected) {
         const eventName = isSelected ? 'rowselected' : 'rowdeselected';
         this.dispatchEvent(new CustomEvent(eventName, { detail: { rowIndex } }));
@@ -73,7 +51,23 @@ class MatrixComponent extends HTMLElement {
     
     // Method to externally select/deselect rows
     selectRow(rowIndex, isUserAction = true) {
+        // Check if already selected, if so, deselect
+        if (this.selectedRows.has(rowIndex)) {
+            this.deselectRow(rowIndex, isUserAction);
+            return;
+        }
+
+        // Enforce max selection limit
+        if (this.selectedRows.size >= this._maxSelection) {
+            const toDeselectIndex = this.selectionOrder.shift();
+            this.selectedRows.delete(toDeselectIndex);
+            this.updateRowStyles();
+            this.dispatchRowSelectionEvent(toDeselectIndex, false);
+        }
+
+        // Select the new row and update styles
         this.selectedRows.add(rowIndex);
+        this.selectionOrder.push(rowIndex); // Track selection order
         this.updateRowStyles();
         if (isUserAction) {
             this.dispatchRowSelectionEvent(rowIndex, true);
@@ -187,10 +181,18 @@ class MatrixComponent extends HTMLElement {
                     box-sizing: border-box;
                 }
                 .matrix-row {
-                    display: flex; /* Use flexbox for rows to layout cells horizontally */
-                    gap: 2px; /* Gap between cells */
+                    display: flex;
+                    gap: 2px;
+                    padding: 1px; /* Adjust padding to offset the border width if needed */
+                    border: 3px solid transparent; /* Transparent border */
+                    border-radius: 5px;
+                    box-sizing: border-box; /* Include padding and border in the element's size */
+                    transition: border-color 0.2s; /* Optional: for a smooth transition effect */
                 }
-                
+                .selected-row {
+                    background: rgba(255, 255, 0, 0.2); /* Light yellow background */
+                    border-color: goldenrod; /* Only change the color, the border size is already defined */
+                }                
                 .matrix-cell {
                     flex: 1;
                     display: flex; /* Flex to center the content of each cell */
@@ -284,8 +286,15 @@ class MatrixComponent extends HTMLElement {
     }
 
     set maxSelection(value) {
-        this._maxSelection = value;
-        this.setAttribute('max-selection', value.toString());
+        this._maxSelection = parseInt(value, 10) || 1; // Default to 1 if NaN
+        this.setAttribute('max-selection', this._maxSelection.toString());
+        // If the new max selection is less than the current selection count, clear excess selections
+        while (this.selectedRows.size > this._maxSelection) {
+            const rowIndex = this.selectionOrder.shift();
+            this.selectedRows.delete(rowIndex);
+            this.dispatchRowSelectionEvent(rowIndex, false);
+        }
+        this.updateRowStyles();
     }
 
 }
