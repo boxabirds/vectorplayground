@@ -11,6 +11,23 @@
             flex-direction: column;
         }
 
+        .popup-content {
+            display: none; /* Hide all content by default */
+            flex-direction: column;
+            align-items: start;
+            padding: 10px;
+            height: 100%;
+        }
+
+        .popup-content.active {
+            display: flex; /* Show the active content */
+        }
+
+        .popup-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
         #progressPanel {
             height: 40px;
             width: 100%;
@@ -64,6 +81,7 @@
             display: inline-block;
         }
         #popupPanel {
+            display:flex;
             position: fixed;
             bottom: -33%; /* Initially hidden */
             left: 0;
@@ -106,7 +124,21 @@
         <button id="btnMultiply" disabled>Multiply</button>
     </div>
 
-    <div id="popupPanel"></div>
+    <div id="popupPanel">
+        <div class="popup-content" id="addOptions">
+            <div class="popup-title">Add options</div>
+            <!-- Add more content here as needed -->
+        </div>
+        <div class="popup-content" id="reorderOptions">
+            <div class="popup-title">Reorder options</div>
+            <!-- Add more content here as needed -->
+        </div>
+        <div class="popup-content" id="multiplyOptions">
+            <div class="popup-title">Multiply options</div>
+            <!-- Add more content here as needed -->
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const actionTray = document.getElementById('actionTray');
@@ -167,11 +199,26 @@
                 console.log("dest matrix selection changed: numselected = " + event.detail.length);
                 updateButtonStates(hasSelection);
             });
+            const popupContents = document.querySelectorAll('.popup-content');
+
+            // Function to switch the active tab panel
+            const switchTab = (activePanelId) => {
+                popupContents.forEach(panel => {
+                    if (panel.id === activePanelId) {
+                        panel.classList.add('active');
+                    } else {
+                        panel.classList.remove('active');
+                    }
+                });
+                popupPanel.style.bottom = '0'; // Show the popup panel
+            };
+
+            // Event listeners for action buttons to switch tabs
+            document.getElementById('btnAdd').addEventListener('click', () => switchTab('addOptions'));
+            document.getElementById('btnReorder').addEventListener('click', () => switchTab('reorderOptions'));
+            document.getElementById('btnMultiply').addEventListener('click', () => switchTab('multiplyOptions'));
+
         });
     </script>
-
-
-
-
 </body>
 </html>
