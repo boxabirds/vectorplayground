@@ -58,9 +58,8 @@
         }
 
         .matrixSquare {
-            width: 100px;
-            height: 100px;
-            background-color: #e0e0e0;
+            /* width: 250px;
+            height: 100px; */
             margin: 10px;
             display: inline-block;
         }
@@ -97,8 +96,8 @@
     </div>
 
     <div id="mainPanel">
-        <div class="matrixSquare"><matrix-component id="source-matrix" readonly></matrix-component></div>
-        <div class="matrixSquare"><matrix-component id="dest-matrix" readonly></matrix-component></div>
+        <div class="matrixSquare"><matrix-component id="source-matrix" rows=4 cols=4 readonly></matrix-component></div>
+        <div class="matrixSquare"><matrix-component id="dest-matrix" rows=4 cols=4 readonly></matrix-component></div>
     </div>
 
     <div id="actionTray">
@@ -125,6 +124,26 @@
                     popupPanel.style.bottom = '-33%'; // Hide panel
                 }
             });
+
+            const matrix1 = document.getElementById('source-matrix');
+            const matrix2 = document.getElementById('dest-matrix');
+        
+            // Listen for selection events from matrix1 and update matrix2
+            matrix1.addEventListener('rowselected', (event) => {
+                matrix2.selectRow(event.detail.rowIndex, false); // The second parameter 'false' indicates a programmatic selection
+            });
+            matrix1.addEventListener('rowdeselected', (event) => {
+                matrix2.deselectRow(event.detail.rowIndex, false);
+            });
+        
+            // Listen for selection events from matrix2 and update matrix1
+            matrix2.addEventListener('rowselected', (event) => {
+                matrix1.selectRow(event.detail.rowIndex, false);
+            });
+            matrix2.addEventListener('rowdeselected', (event) => {
+                matrix1.deselectRow(event.detail.rowIndex, false);
+            });
+
         });
     </script>
 

@@ -145,7 +145,7 @@ class MatrixComponent extends HTMLElement {
                     justify-items: center; /* Center-align the children horizontally */
                     gap: 5px; /* Space between elements */
                     padding: 5px;
-                    border: 1px solid lightgrey;
+                    // border: 1px solid lightgrey;
                     border-radius: 5px;
                     box-sizing: border-box;
                     --bracket-size: 1em; /* Maintain the bracket size variable */
@@ -158,7 +158,7 @@ class MatrixComponent extends HTMLElement {
                     grid-area: matrix; /* Assign to the center area */
                 }
                 .bracket {
-                    margin-top: -15px;
+                    margin-top: -20px;
                     font-size: var(--bracket-size);
                     font-family: "Arial Narrow", Arial, Helvetica, sans-serif;
                     font-weight: lighter;
@@ -206,7 +206,7 @@ class MatrixComponent extends HTMLElement {
                     <div class="bracket">\u005D</div>
                 </div>`;
                 const rows = this._matrix.length;
-                const bracketSize = `${rows * 1.7}em`; // adjust multiplier as needed
+                const bracketSize = `${rows * 2.0}em`; // adjust multiplier as needed
             
                 // ensure the bracket size is same height as number of rows
                 this.shadowRoot.querySelector('.matrix-container').style.setProperty('--bracket-size', bracketSize);
