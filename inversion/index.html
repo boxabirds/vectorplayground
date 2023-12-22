@@ -101,9 +101,9 @@
     </div>
 
     <div id="actionTray">
-        <button>Add</button>
-        <button>Reorder</button>
-        <button>Multiply</button>
+        <button id="btnAdd" disabled>Add</button>
+        <button id="btnReorder" disabled>Reorder</button>
+        <button id="btnMultiply" disabled>Multiply</button>
     </div>
 
     <div id="popupPanel"></div>
@@ -125,25 +125,48 @@
                 }
             });
 
-            const matrix1 = document.getElementById('source-matrix');
-            const matrix2 = document.getElementById('dest-matrix');
+            const source = document.getElementById('source-matrix');
+            const dest = document.getElementById('dest-matrix');
         
             // Listen for selection events from matrix1 and update matrix2
-            matrix1.addEventListener('rowselected', (event) => {
-                matrix2.selectRow(event.detail.rowIndex, false); // The second parameter 'false' indicates a programmatic selection
+            source.addEventListener('rowselected', (event) => {
+                dest.selectRow(event.detail.rowIndex, false); // The second parameter 'false' indicates a programmatic selection
             });
-            matrix1.addEventListener('rowdeselected', (event) => {
-                matrix2.deselectRow(event.detail.rowIndex, false);
+            source.addEventListener('rowdeselected', (event) => {
+                dest.deselectRow(event.detail.rowIndex, false);
             });
         
             // Listen for selection events from matrix2 and update matrix1
-            matrix2.addEventListener('rowselected', (event) => {
-                matrix1.selectRow(event.detail.rowIndex, false);
+            dest.addEventListener('rowselected', (event) => {
+                source.selectRow(event.detail.rowIndex, false);
             });
-            matrix2.addEventListener('rowdeselected', (event) => {
-                matrix1.deselectRow(event.detail.rowIndex, false);
+            dest.addEventListener('rowdeselected', (event) => {
+                source.deselectRow(event.detail.rowIndex, false);
             });
 
+            const buttons = document.querySelectorAll('#actionTray button');
+
+            // Function to update button states
+            const updateButtonStates = (hasSelection) => {
+                buttons.forEach(button => {
+                    button.disabled = !hasSelection;
+                });
+            };
+
+
+            // Listen for the 'selectionchanged' event
+            source.addEventListener('selectionchanged', (event) => {
+                const hasSelection = event.detail.length > 0;
+                console.log("source matrix selection changed: numselected = " + event.detail.length);
+                updateButtonStates(hasSelection);
+            });
+
+            // If you want the same behavior for matrix2, add the same listener to it
+            dest.addEventListener('selectionchanged', (event) => {
+                const hasSelection = event.detail.length > 0;
+                console.log("dest matrix selection changed: numselected = " + event.detail.length);
+                updateButtonStates(hasSelection);
+            });
         });
     </script>
 
