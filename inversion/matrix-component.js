@@ -110,28 +110,72 @@ class MatrixComponent extends HTMLElement {
     }
  
     
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (name === 'readonly') {
-            this.readonly = this.hasAttribute('readonly');
-        } else if (name === 'rows' || name === 'cols') {
-            this._matrix = this.initializeMatrix();
-            this.render();
-        } else if (name === 'max-selection') {
-            this._maxSelection = parseInt(newValue, 10) || 1; // Default to 1 if NaN
-            if (this.selectedRows.size > this._maxSelection) {
-                this.clearSelections();
-            }
+    connectedCallback() {
+        // Extract attributes
+        this._readonly = this.hasAttribute('readonly');
+        const size = Math.max(1, parseInt(this.getAttribute('rows')) || 2); // Assuming square matrices
+        const valuesType = this.getAttribute('values') || 'identity';  // Default to 'identity' if not specified
+
+        // Set the matrix based on the 'values' attribute
+        if (valuesType === 'identity') {
+            this._matrix = this.initializeMatrix(size);
+        } else if (valuesType === 'random invertible') {
+            this._matrix = this.generateRandomInvertibleMatrix(size);
         }
+
+        // Render and set up component based on readonly status
+        this.render();
+        if (!this._readonly) {
+            this.setupListeners();
+        }
+        this.shadowRoot.addEventListener('click', this.onCellClick.bind(this));
+        this.rowSelectionStates = new Array(size).fill(false);
     }
 
-    initializeMatrix() {
-        const rows = Math.max(1, parseInt(this.getAttribute('rows')) || 2);
-        const cols = Math.max(1, parseInt(this.getAttribute('cols')) || 2);
-        return Array.from({ length: rows }, (_, i) =>
-            Array.from({ length: cols }, (_, j) => i === j ? 1 : 0)
+    initializeMatrix(size) {
+        return Array.from({ length: size }, (_, i) =>
+            Array.from({ length: size }, (_, j) => i === j ? 1 : 0)
         );
     }
 
+    determinant(m) {
+        // If the matrix is 1x1, the determinant is the single element in the matrix
+        if (m.length == 1) {
+          return m[0][0];
+        }
+        // If the matrix is 2x2, the determinant is ad - bc
+        else if (m.length == 2) {
+          return m[0][0]*m[1][1] - m[0][1]*m[1][0];
+        }
+        // If the matrix is larger, we need to recurse
+        else {
+          let result = 0;
+          for (let i = 0; i < m[0].length; i++) {
+            // Generate the smaller matrix for the minor
+            let smaller = m.slice(1).map(row => row.filter((_, j) => i != j));
+            // Add or subtract (based on i) the product of the current element and the determinant of the smaller matrix
+            result += Math.pow(-1, i) * m[0][i] * this.determinant(smaller);
+          }
+          return result;
+        }
+      }
+      
+          
+    generateRandomInvertibleMatrix(n) {
+        // TODO while(true) is not a good idea
+      while (true) {
+        // Generate a matrix with entries between -9 and 9
+        let matrix = Array.from({length: n}, () => Array.from({length: n}, () => Math.floor(Math.random() * 19) - 9));
+        // If the determinant is not zero, the matrix is invertible
+        if (this.determinant(matrix) !== 0) {
+          return matrix;
+        }
+      }
+    }
+            
+    
+    
+   
     render() {
         if (this._matrix && Array.isArray(this._matrix) && this._matrix.every(row => Array.isArray(row))) {
             
@@ -251,6 +295,8 @@ class MatrixComponent extends HTMLElement {
             console.error('Invalid matrix provided:', newMatrix);
         }
     }
+
+    
 
     get readonly() {
         return this._readonly;

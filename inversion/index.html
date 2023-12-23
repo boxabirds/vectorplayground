@@ -114,13 +114,13 @@
     </div>
 
     <div id="mainPanel">
-        <div class="matrixSquare"><matrix-component id="source-matrix" rows=4 cols=4 readonly></matrix-component></div>
-        <div class="matrixSquare"><matrix-component id="dest-matrix" rows=4 cols=4 readonly></matrix-component></div>
+        <div class="matrixSquare"><matrix-component id="source-matrix" rows=4 cols=4 readonly values="random invertible"></matrix-component></div>
+        <div class="matrixSquare"><matrix-component id="dest-matrix" rows=4 cols=4 readonly values="identity"></matrix-component></div>
     </div>
 
     <div id="actionTray">
         <button id="btnAdd" disabled>Add</button>
-        <button id="btnReorder" disabled>Reorder</button>
+        <button id="btnSwap" disabled>Swap</button>
         <button id="btnMultiply" disabled>Multiply</button>
     </div>
 
@@ -129,8 +129,8 @@
             <div class="popup-title">Add options</div>
             <!-- Add more content here as needed -->
         </div>
-        <div class="popup-content" id="reorderOptions">
-            <div class="popup-title">Reorder options</div>
+        <div class="popup-content" id="swapOptions">
+            <div class="popup-title">Swap options</div>
             <!-- Add more content here as needed -->
         </div>
         <div class="popup-content" id="multiplyOptions">
@@ -215,7 +215,7 @@
 
             // Event listeners for action buttons to switch tabs
             document.getElementById('btnAdd').addEventListener('click', () => switchTab('addOptions'));
-            document.getElementById('btnReorder').addEventListener('click', () => switchTab('reorderOptions'));
+            document.getElementById('btnSwap').addEventListener('click', () => switchTab('swapOptions'));
             document.getElementById('btnMultiply').addEventListener('click', () => switchTab('multiplyOptions'));
 
         });
