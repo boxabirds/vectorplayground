@@ -160,8 +160,58 @@ class MatrixComponent extends HTMLElement {
         }
       }
       
-          
+    gcd(a, b) {
+        // Euclidean algorithm to find the greatest common divisor
+        while (b !== 0) {
+            let t = b;
+            b = a % b;
+            a = t;
+        }
+        return a;
+    }
+    
+    
+    convertDecimalToFraction(decimal) {
+        const decimalStr = decimal.toString();
+        // Check if it's a repeating decimal
+        const match = decimalStr.match(/(-?\d*)\.(\d*?)(\d+)\2+/);
+        let numerator, denominator;
+    
+        if (match) {
+            // Repeating decimal
+            const [_, wholePart, nonRepeating, repeating] = match;
+            const lenNonRepeating = nonRepeating.length;
+            const lenRepeating = repeating.length;
+    
+            // Create the fraction
+            numerator = parseInt(wholePart + nonRepeating + repeating) - parseInt(wholePart + nonRepeating);
+            denominator = Math.pow(10, lenNonRepeating + lenRepeating) - Math.pow(10, lenNonRepeating);
+        } else {
+            // Finite decimal
+            if (decimalStr.includes('.')) {
+                const parts = decimalStr.split('.');
+                const wholePart = parts[0];
+                const fractionalPart = parts[1];
+                numerator = parseInt(wholePart) * Math.pow(10, fractionalPart.length) + parseInt(fractionalPart);
+                denominator = Math.pow(10, fractionalPart.length);
+            } else {
+                // It's an integer
+                return [decimal, 1];
+            }
+        }
+    
+        // Simplify the fraction
+        const divisor = gcd(numerator, denominator);
+        numerator /= divisor;
+        denominator /= divisor;
+    
+        return [numerator, denominator];
+    }
+
+      
     generateRandomInvertibleMatrix(n) {
+        // we could generate a matrix using compositions but the numbers might end up being very large (hundreds or thousands)
+        // so we rely on the fact that "most matrices are invertible" (citation needed)
         // TODO while(true) is not a good idea
       while (true) {
         // Generate a matrix with entries between -9 and 9
@@ -182,50 +232,84 @@ class MatrixComponent extends HTMLElement {
         let content = this._matrix.map((row, i) =>
             `<div class="matrix-row">${row.map((val, j) =>
                 `<div class="matrix-cell">
-                    ${this._readonly ? `<input id="m${i}${j}" value="${val}" readonly>` : `<input id="m${i}${j}" value="${val}">`}
+                    <div class="content-wrapper">
+                        ${this._readonly ? `<input class="cell-input" id="m${i}${j}" value="" readonly>` : `<input class="cell-input" id="m${i}${j}" value="${val}">`}
+                        <div class="overlay-content" id="overlay${i}${j}">
+                        ${val}
+                        </div>
+                    </div>
                 </div>`
             ).join('')}</div>`
         ).join('');
-
 
             const cols = this._matrix[0].length;
             this.shadowRoot.innerHTML = `
                 <style>
                 .matrix-container {
-                    display: grid; /* Changed to grid for better control */
-                    grid-template-columns: auto 1fr auto; /* Brackets and matrix columns */
+                    display: grid;
+                    grid-template-columns: auto 1fr auto;
                     grid-template-areas: "left-bracket matrix right-bracket";
-                    align-items: center; /* Center-align the children vertically */
-                    justify-items: center; /* Center-align the children horizontally */
-                    gap: 5px; /* Space between elements */
+                    align-items: center;
+                    justify-items: center;
+                    gap: 5px;
                     padding: 5px;
-                    // border: 1px solid lightgrey;
                     border-radius: 5px;
                     box-sizing: border-box;
-                    --bracket-size: 1em; /* Maintain the bracket size variable */
+                    --bracket-size: 1em;
                 }
+                
                 .matrix {
-                    width: 100%; /* Set matrix width to fill the container */
+                    width: 100%;
                     display: grid;
-                    grid-template-rows: repeat(auto-fill, minmax(min-content, max-content)); /* Create a new row for each .matrix-row */
-                    gap: 2px; /* Space between cells */
-                    grid-area: matrix; /* Assign to the center area */
+                    grid-template-rows: repeat(auto-fill, minmax(min-content, max-content));
+                    gap: 2px;
+                    grid-area: matrix;
                 }
+                
                 .bracket {
                     margin-top: -20px;
                     font-size: var(--bracket-size);
                     font-family: "Arial Narrow", Arial, Helvetica, sans-serif;
                     font-weight: lighter;
                     user-select: none;
-                    /* Removed padding to ensure brackets fit snugly */
-                    grid-area: left-bracket; /* Assign to the left area */
+                    grid-area: left-bracket; /* For the left bracket */
                 }
+                
                 .bracket:last-child {
-                    grid-area: right-bracket; /* Assign to the right area */
+                    grid-area: right-bracket; /* For the right bracket */
                 }
-                input {
-                    font-family: inherit;
-                    width: 40px;
+                
+                .matrix-row {
+                    display: flex;
+                    gap: 2px;
+                    padding: 1px;
+                    border: 3px solid transparent;
+                    border-radius: 5px;
+                    box-sizing: border-box;
+                    transition: border-color 0.2s;
+                }
+                
+                .selected-row {
+                    background: rgba(255, 255, 0, 0.2);
+                    border-color: goldenrod;
+                }
+                
+                .matrix-cell {
+                    flex: 1;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    position: relative;
+                }
+                
+                .content-wrapper {
+                    display: inline-flex;
+                    position: relative;
+                }
+                
+                .cell-input {
+                    width: 40px; /* Adjust to match your input field size */
+                    height: 20px; /* Adjust to match your input field size */
                     text-align: center;
                     border: none;
                     background-color: transparent;
@@ -234,24 +318,18 @@ class MatrixComponent extends HTMLElement {
                     padding: 0;
                     box-sizing: border-box;
                 }
-                .matrix-row {
+                
+                .overlay-content {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%; /* Match parent size */
+                    height: 100%; /* Match parent size */
                     display: flex;
-                    gap: 2px;
-                    padding: 1px; /* Adjust padding to offset the border width if needed */
-                    border: 3px solid transparent; /* Transparent border */
-                    border-radius: 5px;
-                    box-sizing: border-box; /* Include padding and border in the element's size */
-                    transition: border-color 0.2s; /* Optional: for a smooth transition effect */
-                }
-                .selected-row {
-                    background: rgba(255, 255, 0, 0.2); /* Light yellow background */
-                    border-color: goldenrod; /* Only change the color, the border size is already defined */
-                }                
-                .matrix-cell {
-                    flex: 1;
-                    display: flex; /* Flex to center the content of each cell */
-                    justify-content: center;
                     align-items: center;
+                    justify-content: center;
+                    pointer-events: none;
+                    overflow: hidden;
                 }
                 </style>
                 <div class="matrix-container">
