@@ -313,7 +313,7 @@ class MatrixComponent extends HTMLElement {
     
                 @keyframes moveRow {
                     0% { transform: translateY(0); }
-                    100% { transform: translateY(calc(var(--move-distance) * 1em)); } /* This will change based on direction */
+                    100% { transform: translateY(calc(var(--move-distance) * 2em)); } /* This will change based on direction */
                 }
                 </style>
                 <div class="matrix-container">
