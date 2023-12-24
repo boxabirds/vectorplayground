@@ -179,25 +179,22 @@
             const buttons = document.querySelectorAll('#actionTray button');
 
             // Function to update button states
-            const updateButtonStates = (hasSelection) => {
+            const updateButtonStates = (numSelected) => {
                 buttons.forEach(button => {
-                    button.disabled = !hasSelection;
+                    if (button.id === 'btnSwap') {
+                        button.disabled = numSelected !== 2; // Enable only for exactly two selections
+                    } else {
+                        button.disabled = numSelected === 0; // Disable for no selections
+                    }
                 });
             };
 
-
-            // Listen for the 'selectionchanged' event
-            source.addEventListener('selectionchanged', (event) => {
-                const hasSelection = event.detail.length > 0;
-                console.log("source matrix selection changed: numselected = " + event.detail.length);
-                updateButtonStates(hasSelection);
-            });
-
-            // If you want the same behavior for matrix2, add the same listener to it
+            // sync dest and source
             dest.addEventListener('selectionchanged', (event) => {
-                const hasSelection = event.detail.length > 0;
-                console.log("dest matrix selection changed: numselected = " + event.detail.length);
-                updateButtonStates(hasSelection);
+                updateButtonStates(event.detail.length);
+            });
+            source.addEventListener('selectionchanged', (event) => {
+                updateButtonStates(event.detail.length);
             });
             const popupContents = document.querySelectorAll('.popup-content');
 
@@ -215,9 +212,21 @@
 
             // Event listeners for action buttons to switch tabs
             document.getElementById('btnAdd').addEventListener('click', () => switchTab('addOptions'));
-            document.getElementById('btnSwap').addEventListener('click', () => switchTab('swapOptions'));
             document.getElementById('btnMultiply').addEventListener('click', () => switchTab('multiplyOptions'));
 
+            const swapRows = () => {
+                // Get the selected rows' indices
+                let selectedSourceRows = source.getSelectedRows();
+                let selectedDestRows = dest.getSelectedRows();
+
+                if (selectedSourceRows.length === 2 && selectedDestRows.length === 2) {
+                    // Swap rows in the source matrix
+                    source.swapRows(selectedSourceRows[0], selectedSourceRows[1]);
+                    // Swap rows in the destination matrix
+                    dest.swapRows(selectedDestRows[0], selectedDestRows[1]);
+                }
+            };
+            document.getElementById('btnSwap').addEventListener('click', swapRows);
         });
     </script>
 </body>

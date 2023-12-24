@@ -409,12 +409,44 @@ class MatrixComponent extends HTMLElement {
         }
     }
 
+    getSelectedRows() {
+        return this.selectionOrder.slice(); // return a copy of the selectionOrder array
+    }
+
+    swapRows(rowIndex1, rowIndex2) {
+        if (rowIndex1 < this._matrix.length && rowIndex2 < this._matrix.length) {
+            // Swap the rows in the matrix data
+            [this._matrix[rowIndex1], this._matrix[rowIndex2]] = [this._matrix[rowIndex2], this._matrix[rowIndex1]];
+    
+            // Update the selectionOrder to reflect the new positions
+            // If either of the swapped rows were selected, update their indices
+            this.selectionOrder = this.selectionOrder.map(index => {
+                if (index === rowIndex1) {
+                    return rowIndex2;
+                } else if (index === rowIndex2) {
+                    return rowIndex1;
+                }
+                return index;
+            });
+    
+            // Update the visual representation
+            this.render();
+    
+            // Ensure the correct rows are still selected visually after the swap
+            this.updateRowStyles();
+    
+            // Dispatch a custom event to notify about the change (optional but useful for external components)
+            this.dispatchEvent(new CustomEvent('rowswapped', { detail: { rowIndex1, rowIndex2 } }));
+        } else {
+            console.error('Invalid row indices for swap:', rowIndex1, rowIndex2);
+        }
+    }
+
     attributeChangedCallback(name, oldValue, newValue) {
         if (name === 'max-selections' && oldValue !== newValue) {
             this.maxSelections = newValue; // Update the property when the attribute changes
         }
     }
-
 
 }
 
