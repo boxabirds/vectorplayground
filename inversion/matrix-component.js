@@ -177,7 +177,7 @@ class MatrixComponent extends HTMLElement {
         }
     
         // Simplify the fraction
-        const divisor = gcd(numerator, denominator);
+        const divisor = this.gcd(numerator, denominator);
         numerator /= divisor;
         denominator /= divisor;
     
@@ -205,18 +205,23 @@ class MatrixComponent extends HTMLElement {
     render() {
         if (this._matrix && Array.isArray(this._matrix) && this._matrix.every(row => Array.isArray(row))) {
             
-        let content = this._matrix.map((row, i) =>
-            `<div class="matrix-row" id="row-${i}">${row.map((val, j) =>
-                `<div class="matrix-cell">
-                    <div class="content-wrapper">
-                        ${this._readonly ? `<input class="cell-input" id="m${i}${j}" value="" readonly>` : `<input class="cell-input" id="m${i}${j}" value="${val}">`}
-                        <div class="overlay-content" id="overlay${i}${j}">
-                        ${val}
-                        </div>
-                    </div>
-                </div>`
-            ).join('')}</div>`
-        ).join('');
+            let content = this._matrix.map((row, i) =>
+                `<div class="matrix-row" id="row-${i}">${row.map((val, j) => {
+                    const fraction = this.convertDecimalToFraction(val);
+                    // Determine how to display the value: as a decimal or as a fraction
+                    const displayValue = fraction[1] > 1 ? 
+                        `<span class="fraction"><span class="numerator">${fraction[0]}</span><span class="denominator">${fraction[1]}</span></span>` : 
+                        val.toString();
+                    return `<div class="matrix-cell">
+                                <div class="content-wrapper">
+                                    ${this._readonly ? 
+                                        `<div class="readonly-cell">${displayValue}</div>` : 
+                                        `<input class="cell-input" id="m${i}${j}" value="${val}">`}
+                                </div>
+                            </div>`;
+                }).join('')}</div>`
+            ).join('');
+
 
             const cols = this._matrix[0].length;
             this.shadowRoot.innerHTML = `
@@ -315,6 +320,41 @@ class MatrixComponent extends HTMLElement {
                     0% { transform: translateY(0); }
                     100% { transform: translateY(calc(var(--move-distance) * 2em)); } /* This will change based on direction */
                 }
+                .readonly-cell {
+                    display: inline-block;
+                    width: 40px; /* Adjust to match your input field size */
+                    height: 20px; /* Adjust to match your input field size */
+                    text-align: center;
+                    position: relative;
+                    font-size: 1.2em;
+                }
+                
+                .fraction {
+                    display: inline-block;
+                    text-align: center;
+                    vertical-align: middle;
+                    line-height: normal; /* Reset line height */
+                }
+
+                .numerator {
+                    display: block;
+                    font-size: 45%;
+                    position: absolute;
+                    top: 0;
+                    width: 100%; /* Ensure it occupies the full width of its parent */
+                    text-align: center;
+                }
+
+                .denominator {
+                    display: block;
+                    font-size: 45%;
+                    position: absolute;
+                    bottom: 0;
+                    width: 100%; /* Ensure it occupies the full width of its parent */
+                    text-align: center;
+                    border-top: 1px solid black; /* The horizontal line of the fraction */
+                }
+ 
                 </style>
                 <div class="matrix-container">
                     <div class="bracket">\u005B</div>
