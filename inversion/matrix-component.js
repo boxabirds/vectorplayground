@@ -421,6 +421,25 @@ class MatrixComponent extends HTMLElement {
         return this.selectionOrder.slice(); // return a copy of the selectionOrder array
     }
 
+    multiplyRow(rowIndex, factor) {
+        if (rowIndex < this._matrix.length) {
+            // Get the row from the matrix
+            const row = this._matrix[rowIndex];
+
+            // Update each element in the row
+            for (let i = 0; i < row.length; i++) {
+                row[i] *= factor;
+            }
+
+            this.render();
+            this.updateRowStyles();
+            // Dispatch an event to notify of the change
+            this.dispatchEvent(new CustomEvent('rowmultiplied', { detail: { rowIndex, factor } }));
+        } else {
+            console.error('Invalid row index for multiplication:', rowIndex);
+        }
+    }
+
     swapRows(rowIndex1, rowIndex2) {
         if (rowIndex1 < this._matrix.length && rowIndex2 < this._matrix.length) {
             const row1 = this.shadowRoot.querySelector(`#row-${rowIndex1}`);
