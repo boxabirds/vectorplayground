@@ -105,6 +105,19 @@
 
             // Handle click for btnSubtract
             document.getElementById('btnSubtract').addEventListener('click', function() {
+                let selectedSourceRows = source.getSelectedRows();
+                let selectedDestRows = dest.getSelectedRows();
+
+                // Ensure that two rows are selected in each matrix
+                if (selectedSourceRows.length === 2 && selectedDestRows.length === 2) {
+                    // Subtract the first selected row from the second in the source matrix
+                    source.subtractRows(selectedSourceRows[0], selectedSourceRows[1]);
+
+                    // Subtract the first selected row from the second in the destination matrix
+                    dest.subtractRows(selectedDestRows[0], selectedDestRows[1]);
+                } else {
+                    alert("Please select exactly two rows in each matrix to perform subtraction.");
+                }
             });
 
             // Handle click for btnMultiply

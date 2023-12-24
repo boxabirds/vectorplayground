@@ -421,6 +421,24 @@ class MatrixComponent extends HTMLElement {
         return this.selectionOrder.slice(); // return a copy of the selectionOrder array
     }
 
+
+    subtractRows(rowIndex1, rowIndex2) {
+        if (rowIndex1 < this._matrix.length && rowIndex2 < this._matrix.length) {
+            // Loop through each column in the row
+            for (let i = 0; i < this._matrix[rowIndex1].length; i++) {
+                // Subtract the value of the first row from the second row
+                this._matrix[rowIndex2][i] -= this._matrix[rowIndex1][i];
+            }
+    
+            this.render(); // Re-render to update the UI
+            this.updateRowStyles();
+            // Dispatch an event to notify of the row subtraction
+            this.dispatchEvent(new CustomEvent('rowsubtracted', { detail: { subtractedFrom: rowIndex2, subtracted: rowIndex1 } }));
+        } else {
+            console.error('Invalid row indices for subtraction:', rowIndex1, rowIndex2);
+        }
+    }
+
     multiplyRow(rowIndex, factor) {
         if (rowIndex < this._matrix.length) {
             // Get the row from the matrix
