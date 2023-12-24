@@ -1,6 +1,6 @@
 class MatrixComponent extends HTMLElement {
     static get observedAttributes() {
-        return ['readonly', 'rows', 'cols', 'max-selection']; // Add 'max-selection' to observed attributes
+        return ['readonly', 'rows', 'cols', 'max-selections']; // Add 'max-selection' to observed attributes
     }
  
     constructor() {
@@ -105,6 +105,7 @@ class MatrixComponent extends HTMLElement {
         }
         this.shadowRoot.addEventListener('click', this.onCellClick.bind(this));
         this.rowSelectionStates = new Array(size).fill(false);
+        this.maxSelections = this.getAttribute('max-selections') || 1; // Add this line
     }
 
     initializeMatrix(size) {
@@ -390,19 +391,30 @@ class MatrixComponent extends HTMLElement {
         const numCols = Math.max(1, Number(value));
         this.setAttribute('cols', numCols);
     }
-    get maxSelection() {
+    get maxSelections() {
         return this._maxSelection;
     }
 
-    set maxSelection(value) {
-        this._maxSelection = parseInt(value, 10) || 1;
-        this.setAttribute('max-selection', this._maxSelection.toString());
-        while (this.selectionOrder.length > this._maxSelection) {
-            const rowIndex = this.selectionOrder.shift();
-            this.deselectRow(rowIndex, false);
+    set maxSelections(value) {
+        const val = parseInt(value, 10) || 1;
+        if (this._maxSelection !== val) {
+            this._maxSelection = val;
+            this.setAttribute('max-selections', val.toString()); // Reflect the property change to the attribute
+            // Handle changing the selection if it exceeds the new max
+            while (this.selectionOrder.length > this._maxSelection) {
+                const rowIndex = this.selectionOrder.shift();
+                this.deselectRow(rowIndex, false);
+            }
+            this.updateRowStyles();
         }
-        this.updateRowStyles();
     }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (name === 'max-selections' && oldValue !== newValue) {
+            this.maxSelections = newValue; // Update the property when the attribute changes
+        }
+    }
+
 
 }
 
