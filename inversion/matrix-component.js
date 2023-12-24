@@ -206,7 +206,7 @@ class MatrixComponent extends HTMLElement {
         if (this._matrix && Array.isArray(this._matrix) && this._matrix.every(row => Array.isArray(row))) {
             
         let content = this._matrix.map((row, i) =>
-            `<div class="matrix-row">${row.map((val, j) =>
+            `<div class="matrix-row" id="row-${i}">${row.map((val, j) =>
                 `<div class="matrix-cell">
                     <div class="content-wrapper">
                         ${this._readonly ? `<input class="cell-input" id="m${i}${j}" value="" readonly>` : `<input class="cell-input" id="m${i}${j}" value="${val}">`}
@@ -306,6 +306,14 @@ class MatrixComponent extends HTMLElement {
                     justify-content: center;
                     pointer-events: none;
                     overflow: hidden;
+                }
+                .moving {
+                    animation: moveRow 0.5s ease-in-out forwards;
+                }
+    
+                @keyframes moveRow {
+                    0% { transform: translateY(0); }
+                    100% { transform: translateY(calc(var(--move-distance) * 1em)); } /* This will change based on direction */
                 }
                 </style>
                 <div class="matrix-container">
@@ -415,32 +423,52 @@ class MatrixComponent extends HTMLElement {
 
     swapRows(rowIndex1, rowIndex2) {
         if (rowIndex1 < this._matrix.length && rowIndex2 < this._matrix.length) {
-            // Swap the rows in the matrix data
-            [this._matrix[rowIndex1], this._matrix[rowIndex2]] = [this._matrix[rowIndex2], this._matrix[rowIndex1]];
-    
-            // Update the selectionOrder to reflect the new positions
-            // If either of the swapped rows were selected, update their indices
-            this.selectionOrder = this.selectionOrder.map(index => {
-                if (index === rowIndex1) {
-                    return rowIndex2;
-                } else if (index === rowIndex2) {
-                    return rowIndex1;
-                }
-                return index;
-            });
-    
-            // Update the visual representation
-            this.render();
-    
-            // Ensure the correct rows are still selected visually after the swap
-            this.updateRowStyles();
-    
-            // Dispatch a custom event to notify about the change (optional but useful for external components)
-            this.dispatchEvent(new CustomEvent('rowswapped', { detail: { rowIndex1, rowIndex2 } }));
+            const row1 = this.shadowRoot.querySelector(`#row-${rowIndex1}`);
+            const row2 = this.shadowRoot.querySelector(`#row-${rowIndex2}`);
+
+            // Calculate the distance to move
+            const distance = rowIndex2 - rowIndex1;
+            row1.style.setProperty('--move-distance', distance);
+            row2.style.setProperty('--move-distance', -distance);
+
+            // Apply the animation
+            row1.classList.add('moving');
+            row2.classList.add('moving');
+
+            // Listen for when the animation ends and then complete the swap
+            const onAnimationEnd = () => {
+                // Remove the listener and animation class
+                row1.removeEventListener('animationend', onAnimationEnd);
+                row2.removeEventListener('animationend', onAnimationEnd);
+                row1.classList.remove('moving');
+                row2.classList.remove('moving');
+
+                // Perform the actual row swap in the matrix data
+                [this._matrix[rowIndex1], this._matrix[rowIndex2]] = [this._matrix[rowIndex2], this._matrix[rowIndex1]];
+
+                // Update the selection order and re-render to reflect changes
+                this.selectionOrder = this.selectionOrder.map(index => {
+                    if (index === rowIndex1) {
+                        return rowIndex2;
+                    } else if (index === rowIndex2) {
+                        return rowIndex1;
+                    }
+                    return index;
+                });
+
+                this.render();
+                this.updateRowStyles();
+                this.dispatchEvent(new CustomEvent('rowswapped', { detail: { rowIndex1, rowIndex2 } }));
+            };
+
+            // Add the event listener for the end of the animation
+            row1.addEventListener('animationend', onAnimationEnd);
+            row2.addEventListener('animationend', onAnimationEnd);
         } else {
             console.error('Invalid row indices for swap:', rowIndex1, rowIndex2);
         }
     }
+
 
     attributeChangedCallback(name, oldValue, newValue) {
         if (name === 'max-selections' && oldValue !== newValue) {

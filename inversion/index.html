@@ -129,10 +129,6 @@
             <div class="popup-title">Add options</div>
             <!-- Add more content here as needed -->
         </div>
-        <div class="popup-content" id="swapOptions">
-            <div class="popup-title">Swap options</div>
-            <!-- Add more content here as needed -->
-        </div>
         <div class="popup-content" id="multiplyOptions">
             <div class="popup-title">Multiply options</div>
             <!-- Add more content here as needed -->
@@ -143,17 +139,38 @@
         document.addEventListener('DOMContentLoaded', function() {
             const actionTray = document.getElementById('actionTray');
             const popupPanel = document.getElementById('popupPanel');
+            const addOptions = document.getElementById('addOptions');
+            const multiplyOptions = document.getElementById('multiplyOptions');
 
-            actionTray.addEventListener('click', function(event) {
-                if (event.target.tagName === 'BUTTON') {
-                    popupPanel.textContent = event.target.textContent;
-                    popupPanel.style.bottom = '0'; // Show panel
-                }
+            // Function to show the popup
+            function showPopup(content) {
+                popupPanel.textContent = content;
+                popupPanel.style.bottom = '0'; // Show panel
+            }
+
+            // Hide popup function
+            function hidePopup() {
+                popupPanel.style.bottom = '-33%'; // Hide panel
+            }
+
+            // Handle click for btnAdd
+            document.getElementById('btnAdd').addEventListener('click', function() {
+                showPopup('Add options');
+                addOptions.style.display = 'block';
+                multiplyOptions.style.display = 'none';
             });
 
+            // Handle click for btnMultiply
+            document.getElementById('btnMultiply').addEventListener('click', function() {
+                showPopup('Multiply options');
+                multiplyOptions.style.display = 'block';
+                addOptions.style.display = 'none';
+            });
+
+            // Clicking outside the popup hides it
             document.addEventListener('click', function(event) {
                 if (!popupPanel.contains(event.target) && !actionTray.contains(event.target)) {
-                    popupPanel.style.bottom = '-33%'; // Hide panel
+                    hidePopup();
                 }
             });
 
