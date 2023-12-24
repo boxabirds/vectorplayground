@@ -8,45 +8,40 @@ class MatrixComponent extends HTMLElement {
         this.attachShadow({ mode: 'open' });
         this._matrix = this.initializeMatrix();
         this._readonly = false;
-        this.selectedRows = new Set(); // Keep track of selected rows
+        this.selectionOrder = []; // FIFO queue to manage selection state
         this._maxSelection = 1; // Default max selection is 1
-        this.rowSelectionStates = []; 
     }
 
 
     updateRowStyles() {
         const rows = this.shadowRoot.querySelectorAll('.matrix-row');
         rows.forEach((row, index) => {
-            if (this.rowSelectionStates[index]) {
+            if (this.selectionOrder.includes(index)) {
                 row.classList.add('selected-row');
             } else {
                 row.classList.remove('selected-row');
             }
         });
     }
-            // Dispatch custom events for row selection/deselection
+
+    // Dispatch custom events for row selection/deselection
     dispatchRowSelectionEvent(rowIndex, isSelected) {
         const eventName = isSelected ? 'rowselected' : 'rowdeselected';
         this.dispatchEvent(new CustomEvent(eventName, { detail: { rowIndex } }));
     }
     
-    // Method to externally select/deselect rows
     selectRow(rowIndex, isUserAction = true) {
-        // Check if the row is already selected, if so, deselect
-        if (this.rowSelectionStates[rowIndex]) {
+        if (this.selectionOrder.includes(rowIndex)) {
             this.deselectRow(rowIndex, isUserAction);
             return;
         }
 
-        // Enforce max selection limit
-        const currentSelectionCount = this.rowSelectionStates.filter(Boolean).length;
-        if (currentSelectionCount >= this._maxSelection) {
-            const toDeselectIndex = this.rowSelectionStates.findIndex(state => state); // Find the first selected row
-            this.deselectRow(toDeselectIndex, false); // Deselect it programmatically
+        if (this.selectionOrder.length >= this._maxSelection) {
+            const toDeselectIndex = this.selectionOrder.shift(); // Remove the first (oldest) selected row
+            this.deselectRow(toDeselectIndex, false);
         }
 
-        // Select the new row and update styles
-        this.rowSelectionStates[rowIndex] = true;
+        this.selectionOrder.push(rowIndex); // Add the new row to the selection queue
         this.updateRowStyles();
         if (isUserAction) {
             this.dispatchRowSelectionEvent(rowIndex, true);
@@ -55,7 +50,7 @@ class MatrixComponent extends HTMLElement {
     }
 
     deselectRow(rowIndex, isUserAction = true) {
-        this.rowSelectionStates[rowIndex] = false;
+        this.selectionOrder = this.selectionOrder.filter(index => index !== rowIndex); // Remove the deselected row
         this.updateRowStyles();
         if (isUserAction) {
             this.dispatchRowSelectionEvent(rowIndex, false);
@@ -64,14 +59,14 @@ class MatrixComponent extends HTMLElement {
     }
 
     dispatchSelectionChanged() {
-        const selectedRowsData = this.rowSelectionStates
-            .map((isSelected, rowIndex) => isSelected ? {
-                rowIndex: rowIndex,
-                values: this._matrix[rowIndex]
-            } : null)
-            .filter(row => row !== null); // Filter out null values
+        const selectedRowsData = this.selectionOrder.map(rowIndex => ({
+            rowIndex: rowIndex,
+            values: this._matrix[rowIndex]
+        }));
         this.dispatchEvent(new CustomEvent('selectionchanged', { detail: selectedRowsData }));
     }
+
+
 
 
     onCellClick(event) {
@@ -80,7 +75,7 @@ class MatrixComponent extends HTMLElement {
             const row = event.target.closest('.matrix-row');
             const rowIndex = Array.from(this.shadowRoot.querySelectorAll('.matrix-row')).indexOf(row);
             if (rowIndex !== -1) {
-                if (this.selectedRows.has(rowIndex)) {
+                if (this.selectionOrder.includes(rowIndex)) {
                     this.deselectRow(rowIndex); // isUserAction is true by default
                 } else {
                     this.selectRow(rowIndex); // isUserAction is true by default
@@ -88,7 +83,7 @@ class MatrixComponent extends HTMLElement {
             }
         }
     }
- 
+     
     
     connectedCallback() {
         // Extract attributes
@@ -400,13 +395,11 @@ class MatrixComponent extends HTMLElement {
     }
 
     set maxSelection(value) {
-        this._maxSelection = parseInt(value, 10) || 1; // Default to 1 if NaN
+        this._maxSelection = parseInt(value, 10) || 1;
         this.setAttribute('max-selection', this._maxSelection.toString());
-        // If the new max selection is less than the current selection count, clear excess selections
-        while (this.selectedRows.size > this._maxSelection) {
+        while (this.selectionOrder.length > this._maxSelection) {
             const rowIndex = this.selectionOrder.shift();
-            this.selectedRows.delete(rowIndex);
-            this.dispatchRowSelectionEvent(rowIndex, false);
+            this.deselectRow(rowIndex, false);
         }
         this.updateRowStyles();
     }
