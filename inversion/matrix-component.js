@@ -13,26 +13,6 @@ class MatrixComponent extends HTMLElement {
         this.rowSelectionStates = []; 
     }
 
-    clearSelections() {
-        this.selectedRows.forEach(rowIndex => {
-            this.selectedRows.delete(rowIndex);
-            this.dispatchRowSelectionEvent(rowIndex, false);
-        });
-        this.updateRowStyles();
-    }
-
-    connectedCallback() {
-        this._readonly = this.hasAttribute('readonly');
-        this._matrix = this.initializeMatrix();
-        this.render();
-        if (!this._readonly) {
-            this.setupListeners();
-        }
-        this.shadowRoot.addEventListener('click', this.onCellClick.bind(this));
-        this.rowSelectionStates = new Array(this._matrix.length).fill(false);
-    }
-
-
 
     updateRowStyles() {
         const rows = this.shadowRoot.querySelectorAll('.matrix-row');
