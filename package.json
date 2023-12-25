@@ -1,0 +1,27 @@
+{
+  "name": "vectorplayground",
+  "version": "1.0.0",
+  "description": "Educational visualisation of mathematical concepts including linear algebra",
+  "main": "inversion/index.html",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/boxabirds/vectorplayground.git"
+  },
+  "author": "Julian Harris",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/boxabirds/vectorplayground/issues"
+  },
+  "homepage": "https://github.com/boxabirds/vectorplayground#readme",
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "jsdom": "^23.0.1"
+  },
+  "jest": {
+    "testEnvironment": "<rootDir>/inversion/__tests__/jest-environment-jsdom-global.js"
+  }
+}
