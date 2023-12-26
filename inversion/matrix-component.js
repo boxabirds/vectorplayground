@@ -136,54 +136,53 @@ class MatrixComponent extends HTMLElement {
         }
       }
       
-    gcd(a, b) {
-        // Euclidean algorithm to find the greatest common divisor
-        while (b !== 0) {
-            let t = b;
-            b = a % b;
-            a = t;
-        }
-        return a;
-    }
-    
-    
-    convertDecimalToFraction(decimal) {
-        const decimalStr = decimal.toString();
-        // Check if it's a repeating decimal
-        const match = decimalStr.match(/(-?\d*)\.(\d*?)(\d+)\2+/);
-        let numerator, denominator;
-    
-        if (match) {
-            // Repeating decimal
-            const [_, wholePart, nonRepeating, repeating] = match;
-            const lenNonRepeating = nonRepeating.length;
-            const lenRepeating = repeating.length;
-    
-            // Create the fraction
-            numerator = parseInt(wholePart + nonRepeating + repeating) - parseInt(wholePart + nonRepeating);
-            denominator = Math.pow(10, lenNonRepeating + lenRepeating) - Math.pow(10, lenNonRepeating);
-        } else {
-            // Finite decimal
-            if (decimalStr.includes('.')) {
-                const parts = decimalStr.split('.');
-                const wholePart = parts[0];
-                const fractionalPart = parts[1];
-                numerator = parseInt(wholePart) * Math.pow(10, fractionalPart.length) + parseInt(fractionalPart);
-                denominator = Math.pow(10, fractionalPart.length);
-            } else {
-                // It's an integer
-                return [decimal, 1];
-            }
-        }
-    
-        // Simplify the fraction
-        const divisor = this.gcd(numerator, denominator);
-        numerator /= divisor;
-        denominator /= divisor;
-    
-        return [numerator, denominator];
-    }
 
+      convertDecimalToFraction(floatValue, tolerance = 0.0001) {
+        let isNegative = false;
+        if (floatValue < 0) {
+          isNegative = true;
+          floatValue = Math.abs(floatValue);
+        }
+      
+        // Separate the whole number and fractional parts
+        let wholePart = Math.floor(floatValue);
+        let fractionalPart = floatValue - wholePart;
+      
+        let numerator = 1;
+        let h1 = 0;
+        let denominator = 0;
+        let h2 = 1;
+        let b = fractionalPart;
+      
+        do {
+          const a = Math.floor(b);
+          let aux = numerator;
+          numerator = a * numerator + h1;
+          h1 = aux;
+          aux = denominator;
+          denominator = a * denominator + h2;
+          h2 = aux;
+          b = 1 / (b - a);
+        } while (Math.abs(fractionalPart - numerator / denominator) > fractionalPart * tolerance);
+      
+        if (isNegative) {
+          if (wholePart === 0 && numerator !== 0) {
+            // Apply the sign to the numerator if the whole part is zero
+            numerator = -numerator;
+          } else {
+            // Apply the sign to the whole part otherwise
+            wholePart = -wholePart;
+          }
+        }
+      
+        // Adjust the case when the fraction is 0 (i.e., the number was an integer)
+        if (fractionalPart === 0) {
+          return [wholePart, 0, 1]; // The fraction is 0/1 in this case
+        }
+        
+        return [wholePart, numerator, denominator];
+      }
+      
       
     generateRandomInvertibleMatrix(n) {
         // we could generate a matrix using compositions but the numbers might end up being very large (hundreds or thousands)
@@ -204,14 +203,23 @@ class MatrixComponent extends HTMLElement {
    
     render() {
         if (this._matrix && Array.isArray(this._matrix) && this._matrix.every(row => Array.isArray(row))) {
-            
             let content = this._matrix.map((row, i) =>
                 `<div class="matrix-row" id="row-${i}">${row.map((val, j) => {
-                    const fraction = this.convertDecimalToFraction(val);
-                    // Determine how to display the value: as a decimal or as a fraction
-                    const displayValue = fraction[1] > 1 ? 
-                        `<span class="fraction"><span class="numerator">${fraction[0]}</span><span class="denominator">${fraction[1]}</span></span>` : 
+                    const [wholePart, numerator, denominator] = this.convertDecimalToFraction(val);
+                    const isNegative = numerator < 0;
+                    const absNumerator = Math.abs(numerator);
+    
+                    // Determine how to display the value: as a decimal, as a whole number, or as a fraction
+                    const displayValue = denominator !== 1 ?
+                        `${wholePart !== 0 ? `<span class="whole-part">${wholePart}</span>` : ''}` +
+                        `<span class="fraction">` +
+                            `${isNegative ? `<span class="sign">-</span>` : ''}` +
+                            `<span class="numerator-content">${absNumerator}</span>` +
+                            `<span class="fraction-separator"></span>` +
+                            `<span class="denominator">${denominator}</span>` +
+                        `</span>` :
                         val.toString();
+    
                     return `<div class="matrix-cell">
                                 <div class="content-wrapper">
                                     ${this._readonly ? 
@@ -221,7 +229,7 @@ class MatrixComponent extends HTMLElement {
                             </div>`;
                 }).join('')}</div>`
             ).join('');
-
+               
 
             const cols = this._matrix[0].length;
             this.shadowRoot.innerHTML = `
@@ -263,7 +271,7 @@ class MatrixComponent extends HTMLElement {
                 .matrix-row {
                     display: flex;
                     gap: 2px;
-                    padding: 1px;
+                    padding: 0.3em;
                     border: 3px solid transparent;
                     border-radius: 5px;
                     box-sizing: border-box;
@@ -329,32 +337,44 @@ class MatrixComponent extends HTMLElement {
                     font-size: 1.2em;
                 }
                 
-                .fraction {
+                .whole-part {
                     display: inline-block;
-                    text-align: center;
-                    vertical-align: middle;
-                    line-height: normal; /* Reset line height */
+                    margin-right: 0.1em; /* Positive margin to add space between the whole number and the fraction */
+                    vertical-align: top; /* Aligns the whole part with the top of the cell */
                 }
 
-                .numerator {
+                .fraction {
+                    display: inline-flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: flex-start; /* Aligns the fraction to the top */
+                    position: relative;
+                    top: -0.7em; /* Adjust as needed to align with the top edge of the whole part */
+                    font-size: 0.7em; /* Decrease font size to match the height of the whole part */
+                }
+
+                .numerator-content, .denominator {
                     display: block;
-                    font-size: 45%;
-                    position: absolute;
-                    top: 0;
-                    width: 100%; /* Ensure it occupies the full width of its parent */
+                    line-height: 1; /* Ensure the line height doesn't add extra space */
                     text-align: center;
                 }
 
-                .denominator {
-                    display: block;
-                    font-size: 45%;
-                    position: absolute;
-                    bottom: 0;
-                    width: 100%; /* Ensure it occupies the full width of its parent */
-                    text-align: center;
-                    border-top: 1px solid black; /* The horizontal line of the fraction */
+                .fraction-separator {
+                    height: 1px;
+                    background-color: black;
+                    width: 100%;
+                    align-self: center; /* Center the separator within the fraction */
                 }
- 
+
+                .sign {
+                    display: inline-block;
+                    width: 0; /* Don't take up space */
+                    overflow: visible; /* Make the sign visible outside the width */
+                    position: absolute;
+                    left: -0.6em; /* Adjust as necessary */
+                    text-align: left;
+                }
+               
                 </style>
                 <div class="matrix-container">
                     <div class="bracket">\u005B</div>
@@ -362,7 +382,7 @@ class MatrixComponent extends HTMLElement {
                     <div class="bracket">\u005D</div>
                 </div>`;
                 const rows = this._matrix.length;
-                const bracketSize = `${rows * 2.0}em`; // adjust multiplier as needed
+                const bracketSize = `${rows * 2.5}em`; // adjust multiplier as needed
             
                 // ensure the bracket size is same height as number of rows
                 this.shadowRoot.querySelector('.matrix-container').style.setProperty('--bracket-size', bracketSize);
