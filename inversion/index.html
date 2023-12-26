@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Matrix Operation Interface</title>
     <style>
         body, html {
@@ -61,12 +62,16 @@
             padding-bottom: 128px; /* Height of action tray */
             display: flex;
             justify-content: center;
-            align-items: center;
-        }
+            align-items: flex-start; /* Align items to the start of the flex container */
+            align-content: flex-start; /* Align content to the start for wrapped flex items */
+            flex-wrap: wrap; /* Allow items to wrap onto the next line */
+            overflow-y: auto; /* Add scrolling for small screens */
+            margin: 0; /* Remove any default margin */
+            }
 
         .matrixSquare {
             margin: 10px;
-            display: inline-block;
+            display: block; 
         }
 
 </style>
