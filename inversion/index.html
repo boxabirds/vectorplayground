@@ -108,26 +108,64 @@
             const addOptions = document.getElementById('addOptions');
             const multiplyOptions = document.getElementById('multiplyOptions');
 
+            const parseFraction = (input) => {
+                const mixedFractionMatch = input.match(/^(-?\d+)\s*(-?\d+)\/(\d+)$/); // Match mixed fractions like "-2 3/5"
+                const fractionMatch = input.match(/^(-?\d+)\/(\d+)$/); // Match simple fractions like "3/5"
+                
+                if (mixedFractionMatch) {
+                    const whole = parseInt(mixedFractionMatch[1], 10); // Parse the whole part
+                    const numerator = parseInt(mixedFractionMatch[2], 10); // Parse the numerator
+                    const denominator = parseInt(mixedFractionMatch[3], 10); // Parse the denominator
+                    if (denominator !== 0) { // Ensure the denominator is not zero
+                        const fraction = numerator / denominator;
+                        return whole < 0 ? whole - Math.abs(fraction) : whole + fraction; // Adjust for negative whole numbers
+                    } else {
+                        alert("Invalid fraction. The denominator cannot be zero.");
+                        return null;
+                    }
+                } else if (fractionMatch) {
+                    const numerator = parseInt(fractionMatch[1], 10); // Parse as integer
+                    const denominator = parseInt(fractionMatch[2], 10); // Parse as integer
+                    if (denominator !== 0) { // Ensure the denominator is not zero
+                        return numerator / denominator;
+                    } else {
+                        alert("Invalid fraction. The denominator cannot be zero.");
+                        return null;
+                    }
+                } else if (!isNaN(input) && input.trim() !== '') { // Handle regular numbers
+                    return Number(input);
+                } else {
+                    alert("Invalid input. Please enter a valid number or fraction.");
+                    return null;
+                }
+            };
+
+
             // Handle click for btnSubtract
             document.getElementById('btnSubtract').addEventListener('click', function() {
-                let selectedSourceRows = source.getSelectedRows();
-                let selectedDestRows = dest.getSelectedRows();
+                let factor = prompt("How many times do you want to subtract the first from the second row? (Any real number)"); // Prompt for the factor
+                factor = parseFraction(factor);
+                if (factor !== null) {
+                    factor = parseFloat(factor); // Convert the input to a float, allowing for real numbers
+                    
+                    let selectedSourceRows = source.getSelectedRows();
+                    let selectedDestRows = dest.getSelectedRows();
 
-                // Ensure that two rows are selected in each matrix
-                if (selectedSourceRows.length === 2 && selectedDestRows.length === 2) {
-                    // Subtract the first selected row from the second in the source matrix
-                    source.subtractRows(selectedSourceRows[0], selectedSourceRows[1]);
+                    // Ensure that two rows are selected in each matrix
+                    if (selectedSourceRows.length === 2 && selectedDestRows.length === 2) {
+                        // Subtract the first selected row from the second in the source matrix, using factor as the third parameter
+                        source.subtractRows(selectedSourceRows[0], selectedSourceRows[1], factor);
 
-                    // Subtract the first selected row from the second in the destination matrix
-                    dest.subtractRows(selectedDestRows[0], selectedDestRows[1]);
+                        // Subtract the first selected row from the second in the destination matrix, using factor as the third parameter
+                        dest.subtractRows(selectedDestRows[0], selectedDestRows[1], factor);
+                    } else {
+                        alert("Please select exactly two rows in each matrix to perform subtraction.");
+                    }
                 } else {
-                    alert("Please select exactly two rows in each matrix to perform subtraction.");
+                    alert("Invalid input. Please enter a valid real number.");
                 }
             });
 
-            // Handle click for btnMultiply
-            document.getElementById('btnMultiply').addEventListener('click', function() {
-            });
 
             const source = document.getElementById('source-matrix');
             const dest = document.getElementById('dest-matrix');
@@ -182,10 +220,12 @@
                 }
             };
             document.getElementById('btnSwap').addEventListener('click', swapRows);
+
+
             document.getElementById('btnMultiply').addEventListener('click', function() {
                 let factor = prompt("Enter the multiplication factor:"); // Prompt to enter the multiplication amount
-                if (factor !== null && factor.trim() !== '' && !isNaN(factor)) {
-                    factor = parseFloat(factor); // Convert the input to a number
+                factor = parseFraction(factor);
+                if (factor !== null) {
                     console.log("Multiplying by " + factor);
 
                     let selectedSourceRows = source.getSelectedRows();

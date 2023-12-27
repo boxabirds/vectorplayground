@@ -143,17 +143,27 @@ class MatrixComponent extends HTMLElement {
           isNegative = true;
           floatValue = Math.abs(floatValue);
         }
-      
+    
         // Separate the whole number and fractional parts
         let wholePart = Math.floor(floatValue);
         let fractionalPart = floatValue - wholePart;
-      
+    
+        if (Math.abs(fractionalPart) < tolerance || Math.abs(fractionalPart - 1) < tolerance) {
+          // If the fractional part is close to 1, adjust the whole part
+          if (Math.abs(fractionalPart - 1) < tolerance) {
+            wholePart++;
+          }
+          // Apply the negative sign if the original value was negative
+          wholePart = isNegative ? -wholePart : wholePart;
+          return [wholePart, 0, 1];
+        }
+    
         let numerator = 1;
         let h1 = 0;
         let denominator = 0;
         let h2 = 1;
         let b = fractionalPart;
-      
+    
         do {
           const a = Math.floor(b);
           let aux = numerator;
@@ -164,24 +174,35 @@ class MatrixComponent extends HTMLElement {
           h2 = aux;
           b = 1 / (b - a);
         } while (Math.abs(fractionalPart - numerator / denominator) > fractionalPart * tolerance);
-      
+    
+        // Simplify the fraction using gcd
+        let commonDivisor = this.gcd(Math.abs(numerator), denominator);
+        numerator /= commonDivisor;
+        denominator /= commonDivisor;
+    
+        // Adjust for edge cases near whole numbers
+        if (Math.abs(fractionalPart - 1) < tolerance) {
+          wholePart += (isNegative ? -1 : 1);
+          numerator = 0;
+        }
+    
+        // Apply the negative sign if necessary
         if (isNegative) {
           if (wholePart === 0 && numerator !== 0) {
-            // Apply the sign to the numerator if the whole part is zero
-            numerator = -numerator;
+            numerator = -numerator; // Apply the negative sign to the numerator
           } else {
-            // Apply the sign to the whole part otherwise
-            wholePart = -wholePart;
+            wholePart = -wholePart; // Apply the negative sign to the whole part
           }
         }
-      
-        // Adjust the case when the fraction is 0 (i.e., the number was an integer)
-        if (fractionalPart === 0) {
-          return [wholePart, 0, 1]; // The fraction is 0/1 in this case
+    
+        // Special handling for extremely small numbers not close to whole numbers
+        if (Math.abs(floatValue) < tolerance && numerator !== 0) {
+          return [0, isNegative ? -numerator : numerator, denominator];
         }
-        
+    
         return [wholePart, numerator, denominator];
-      }
+    }
+    
       
       
     generateRandomInvertibleMatrix(n) {
@@ -482,18 +503,18 @@ class MatrixComponent extends HTMLElement {
     }
 
 
-    subtractRows(rowIndex1, rowIndex2) {
+    subtractRows(rowIndex1, rowIndex2, factor) {
         if (rowIndex1 < this._matrix.length && rowIndex2 < this._matrix.length) {
             // Loop through each column in the row
             for (let i = 0; i < this._matrix[rowIndex1].length; i++) {
-                // Subtract the value of the first row from the second row
-                this._matrix[rowIndex2][i] -= this._matrix[rowIndex1][i];
+                // Multiply the value of the first row by the factor and then subtract it from the second row
+                this._matrix[rowIndex2][i] -= this._matrix[rowIndex1][i] * factor;
             }
     
             this.render(); // Re-render to update the UI
             this.updateRowStyles();
             // Dispatch an event to notify of the row subtraction
-            this.dispatchEvent(new CustomEvent('rowsubtracted', { detail: { subtractedFrom: rowIndex2, subtracted: rowIndex1 } }));
+            this.dispatchEvent(new CustomEvent('rowsubtracted', { detail: { subtractedFrom: rowIndex2, subtracted: rowIndex1, factor: factor } }));
         } else {
             console.error('Invalid row indices for subtraction:', rowIndex1, rowIndex2);
         }
