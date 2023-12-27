@@ -2,7 +2,7 @@ class MatrixComponent extends HTMLElement {
     static get observedAttributes() {
         return ['readonly', 'rows', 'cols', 'max-selections']; // Add 'max-selection' to observed attributes
     }
- 
+  
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -11,8 +11,8 @@ class MatrixComponent extends HTMLElement {
         this.selectionOrder = []; // FIFO queue to manage selection state
         this._maxSelection = 1; // Default max selection is 1
     }
-
-
+  
+  
     updateRowStyles() {
         const rows = this.shadowRoot.querySelectorAll('.matrix-row');
         rows.forEach((row, index) => {
@@ -23,7 +23,7 @@ class MatrixComponent extends HTMLElement {
             }
         });
     }
-
+  
     // Dispatch custom events for row selection/deselection
     dispatchRowSelectionEvent(rowIndex, isSelected) {
         const eventName = isSelected ? 'rowselected' : 'rowdeselected';
@@ -35,12 +35,12 @@ class MatrixComponent extends HTMLElement {
             this.deselectRow(rowIndex, isUserAction);
             return;
         }
-
+  
         if (this.selectionOrder.length >= this._maxSelection) {
             const toDeselectIndex = this.selectionOrder.shift(); // Remove the first (oldest) selected row
             this.deselectRow(toDeselectIndex, false);
         }
-
+  
         this.selectionOrder.push(rowIndex); // Add the new row to the selection queue
         this.updateRowStyles();
         if (isUserAction) {
@@ -48,7 +48,7 @@ class MatrixComponent extends HTMLElement {
             this.dispatchSelectionChanged();
         }
     }
-
+  
     deselectRow(rowIndex, isUserAction = true) {
         this.selectionOrder = this.selectionOrder.filter(index => index !== rowIndex); // Remove the deselected row
         this.updateRowStyles();
@@ -57,7 +57,7 @@ class MatrixComponent extends HTMLElement {
             this.dispatchSelectionChanged();
         }
     }
-
+  
     dispatchSelectionChanged() {
         const selectedRowsData = this.selectionOrder.map(rowIndex => ({
             rowIndex: rowIndex,
@@ -65,10 +65,10 @@ class MatrixComponent extends HTMLElement {
         }));
         this.dispatchEvent(new CustomEvent('selectionchanged', { detail: selectedRowsData }));
     }
-
-
-
-
+  
+  
+  
+  
     onCellClick(event) {
         const cell = event.target.closest('.matrix-cell');
         if (cell) {
@@ -90,14 +90,14 @@ class MatrixComponent extends HTMLElement {
         this._readonly = this.hasAttribute('readonly');
         const size = Math.max(1, parseInt(this.getAttribute('rows')) || 2); // Assuming square matrices
         const valuesType = this.getAttribute('values') || 'identity';  // Default to 'identity' if not specified
-
+  
         // Set the matrix based on the 'values' attribute
         if (valuesType === 'identity') {
             this._matrix = this.initializeMatrix(size);
         } else if (valuesType === 'random invertible') {
             this._matrix = this.generateRandomInvertibleMatrix(size);
         }
-
+  
         // Render and set up component based on readonly status
         this.render();
         if (!this._readonly) {
@@ -107,13 +107,13 @@ class MatrixComponent extends HTMLElement {
         this.rowSelectionStates = new Array(size).fill(false);
         this.maxSelections = this.getAttribute('max-selections') || 1; // Add this line
     }
-
+  
     initializeMatrix(size) {
         return Array.from({ length: size }, (_, i) =>
             Array.from({ length: size }, (_, j) => i === j ? 1 : 0)
         );
     }
-
+  
     determinant(m) {
         // If the matrix is 1x1, the determinant is the single element in the matrix
         if (m.length == 1) {
@@ -145,7 +145,7 @@ class MatrixComponent extends HTMLElement {
         }
         return a;
     }
-
+  
       convertDecimalToFraction(floatValue, tolerance = 0.0001) {
         let isNegative = false;
         if (floatValue < 0) {
@@ -260,7 +260,7 @@ class MatrixComponent extends HTMLElement {
                 }).join('')}</div>`
             ).join('');
                
-
+  
             const cols = this._matrix[0].length;
             this.shadowRoot.innerHTML = `
                 <style>
@@ -372,7 +372,7 @@ class MatrixComponent extends HTMLElement {
                     margin-right: 0.1em; /* Positive margin to add space between the whole number and the fraction */
                     vertical-align: top; /* Aligns the whole part with the top of the cell */
                 }
-
+  
                 .fraction {
                     display: inline-flex;
                     flex-direction: column;
@@ -382,20 +382,20 @@ class MatrixComponent extends HTMLElement {
                     top: -0.7em; /* Adjust as needed to align with the top edge of the whole part */
                     font-size: 0.7em; /* Decrease font size to match the height of the whole part */
                 }
-
+  
                 .numerator-content, .denominator {
                     display: block;
                     line-height: 1; /* Ensure the line height doesn't add extra space */
                     text-align: center;
                 }
-
+  
                 .fraction-separator {
                     height: 1px;
                     background-color: black;
                     width: 100%;
                     align-self: center; /* Center the separator within the fraction */
                 }
-
+  
                 .sign {
                     display: inline-block;
                     width: 0; /* Don't take up space */
@@ -420,25 +420,25 @@ class MatrixComponent extends HTMLElement {
             console.error('Invalid matrix structure:', this._matrix);
         }
     }
-
+  
     setupListeners() {
         this.shadowRoot.querySelectorAll('input').forEach(input => {
             input.removeEventListener('input', this.handleInput);
             input.addEventListener('input', this.handleInput.bind(this));
         });
     }
-
+  
     handleInput(event) {
         const id = event.target.id;
         const [_, i, j] = id.match(/m(\d+)(\d+)/).map(Number);
         this._matrix[i][j] = parseFloat(event.target.value) || 0;
         this.dispatchEvent(new CustomEvent('change', { detail: { matrix: this._matrix } }));
     }
-
+  
     get matrix() {
         return this._matrix;
     }
-
+  
     set matrix(newMatrix) {
         if (Array.isArray(newMatrix) && newMatrix.every(row => Array.isArray(row))) {
             this._matrix = newMatrix;
@@ -447,13 +447,102 @@ class MatrixComponent extends HTMLElement {
             console.error('Invalid matrix provided:', newMatrix);
         }
     }
-
-    
-
+  
+    hasAtLeastOneNonZeroOnDiagonal() {
+      for (let i = 0; i < Math.min(this._matrix.length, this._matrix[0].length); i++) {
+          if (this._matrix[i][i] !== 0) {
+              return true;
+          }
+      }
+      return false;
+  }
+  
+  // Normalize the first pivot (non-zero element of the first row) to 1
+  firstPivotNormalizedTo1() {
+      for (let i = 0; i < this._matrix[0].length; i++) {
+          if (this._matrix[0][i] !== 0) {
+              return this._matrix[0][i] === 1;
+          }
+      }
+      return false; // No non-zero element found in the first row
+  }
+  
+  // Check if the matrix is in upper triangular form
+  isUpperTriangularForm() {
+      for (let i = 1; i < this._matrix.length; i++) {
+          for (let j = 0; j < i; j++) {
+              if (this._matrix[i][j] !== 0) {
+                  return false;
+              }
+          }
+      }
+      return true;
+  }
+  
+  // Check if all diagonal elements are 1
+  allDiagonalsAre1() {
+      for (let i = 0; i < Math.min(this._matrix.length, this._matrix[0].length); i++) {
+          if (this._matrix[i][i] !== 1) {
+              return false;
+          }
+      }
+      return true;
+  }
+  
+  // Check if the matrix is in row echelon form
+  isInRowEchelonForm() {
+      let lastNonZeroRow = -1;
+      for (let i = 0; i < this._matrix.length; i++) {
+          let firstNonZeroIndex = this._matrix[i].findIndex(value => value !== 0);
+          if (firstNonZeroIndex === -1) {
+              continue; // Skip all-zero rows
+          }
+          if (firstNonZeroIndex <= lastNonZeroRow) {
+              return false; // A leading entry is not to the right of the one above it
+          }
+          lastNonZeroRow = firstNonZeroIndex;
+      }
+      return true;
+  }
+  
+  // Check if the matrix is in reduced row echelon form
+  isInReducedRowEchelonForm() {
+      if (!this.isInRowEchelonForm()) {
+          return false;
+      }
+      for (let i = 0; i < this._matrix.length; i++) {
+          let firstNonZeroIndex = this._matrix[i].findIndex(value => value !== 0);
+          if (firstNonZeroIndex !== -1 && this._matrix[i][firstNonZeroIndex] !== 1) {
+              return false; // Leading entry is not 1
+          }
+          for (let j = i + 1; j < this._matrix.length; j++) {
+              if (this._matrix[j][firstNonZeroIndex] !== 0) {
+                  return false; // Entries above and below the leading 1 are not 0
+              }
+          }
+      }
+      return true;
+  }
+  
+  isIdentity() {
+    if (!this._matrix || this._matrix.length === 0 || this._matrix.length !== this._matrix[0].length) {
+        return false; // Ensure the matrix is square
+    }
+  
+    for (let i = 0; i < this._matrix.length; i++) {
+        for (let j = 0; j < this._matrix[i].length; j++) {
+            if ((i === j && this._matrix[i][j] !== 1) || (i !== j && this._matrix[i][j] !== 0)) {
+                return false; // Check for 1s on the diagonal and 0s elsewhere
+            }
+        }
+    }
+    return true;
+  }
+  
     get readonly() {
         return this._readonly;
     }
-
+  
     set readonly(value) {
         const isReadOnly = Boolean(value);
     
@@ -470,21 +559,21 @@ class MatrixComponent extends HTMLElement {
     
         this.render();
     }
-
-
+  
+  
     get rows() {
         return this._matrix.length;
     }
-
+  
     set rows(value) {
         const numRows = Math.max(1, Number(value));
         this.setAttribute('rows', numRows);
     }
-
+  
     get cols() {
         return this._matrix[0].length;
     }
-
+  
     set cols(value) {
         const numCols = Math.max(1, Number(value));
         this.setAttribute('cols', numCols);
@@ -492,7 +581,7 @@ class MatrixComponent extends HTMLElement {
     get maxSelections() {
         return this._maxSelection;
     }
-
+  
     set maxSelections(value) {
         const val = parseInt(value, 10) || 1;
         if (this._maxSelection !== val) {
@@ -506,12 +595,12 @@ class MatrixComponent extends HTMLElement {
             this.updateRowStyles();
         }
     }
-
+  
     getSelectedRows() {
         return this.selectionOrder.slice(); // return a copy of the selectionOrder array
     }
-
-
+  
+  
     subtractRows(rowIndex1, rowIndex2, factor) {
         if (rowIndex1 < this._matrix.length && rowIndex2 < this._matrix.length) {
             // Loop through each column in the row
@@ -528,17 +617,17 @@ class MatrixComponent extends HTMLElement {
             console.error('Invalid row indices for subtraction:', rowIndex1, rowIndex2);
         }
     }
-
+  
     multiplyRow(rowIndex, factor) {
         if (rowIndex < this._matrix.length) {
             // Get the row from the matrix
             const row = this._matrix[rowIndex];
-
+  
             // Update each element in the row
             for (let i = 0; i < row.length; i++) {
                 row[i] *= factor;
             }
-
+  
             this.render();
             this.updateRowStyles();
             // Dispatch an event to notify of the change
@@ -547,21 +636,21 @@ class MatrixComponent extends HTMLElement {
             console.error('Invalid row index for multiplication:', rowIndex);
         }
     }
-
+  
     swapRows(rowIndex1, rowIndex2) {
         if (rowIndex1 < this._matrix.length && rowIndex2 < this._matrix.length) {
             const row1 = this.shadowRoot.querySelector(`#row-${rowIndex1}`);
             const row2 = this.shadowRoot.querySelector(`#row-${rowIndex2}`);
-
+  
             // Calculate the distance to move
             const distance = rowIndex2 - rowIndex1;
             row1.style.setProperty('--move-distance', distance);
             row2.style.setProperty('--move-distance', -distance);
-
+  
             // Apply the animation
             row1.classList.add('moving');
             row2.classList.add('moving');
-
+  
             // Listen for when the animation ends and then complete the swap
             const onAnimationEnd = () => {
                 // Remove the listener and animation class
@@ -569,10 +658,10 @@ class MatrixComponent extends HTMLElement {
                 row2.removeEventListener('animationend', onAnimationEnd);
                 row1.classList.remove('moving');
                 row2.classList.remove('moving');
-
+  
                 // Perform the actual row swap in the matrix data
                 [this._matrix[rowIndex1], this._matrix[rowIndex2]] = [this._matrix[rowIndex2], this._matrix[rowIndex1]];
-
+  
                 // Update the selection order and re-render to reflect changes
                 this.selectionOrder = this.selectionOrder.map(index => {
                     if (index === rowIndex1) {
@@ -582,12 +671,12 @@ class MatrixComponent extends HTMLElement {
                     }
                     return index;
                 });
-
+  
                 this.render();
                 this.updateRowStyles();
                 this.dispatchEvent(new CustomEvent('rowswapped', { detail: { rowIndex1, rowIndex2 } }));
             };
-
+  
             // Add the event listener for the end of the animation
             row1.addEventListener('animationend', onAnimationEnd);
             row2.addEventListener('animationend', onAnimationEnd);
@@ -595,14 +684,15 @@ class MatrixComponent extends HTMLElement {
             console.error('Invalid row indices for swap:', rowIndex1, rowIndex2);
         }
     }
-
-
+  
+  
     attributeChangedCallback(name, oldValue, newValue) {
         if (name === 'max-selections' && oldValue !== newValue) {
             this.maxSelections = newValue; // Update the property when the attribute changes
         }
     }
-
-}
-
-customElements.define('matrix-component', MatrixComponent);
+  
+  }
+  
+  customElements.define('matrix-component', MatrixComponent);
+  

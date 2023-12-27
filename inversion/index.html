@@ -140,6 +140,25 @@
                 }
             };
 
+            function updateProgressPanel() {
+                const sourceMatrix = document.getElementById('source-matrix');
+                const checks = [
+                    sourceMatrix.hasAtLeastOneNonZeroOnDiagonal,
+                    sourceMatrix.firstPivotNormalizedTo1,
+                    sourceMatrix.isUpperTriangularForm,
+                    sourceMatrix.allDiagonalsAre1,
+                    sourceMatrix.isInRowEchelonForm,
+                    sourceMatrix.isInReducedRowEchelonForm,
+                    sourceMatrix.isIdentity
+                ];
+                const progressTicks = document.querySelectorAll('.progressTick');
+                checks.forEach((check, index) => {
+                    const isComplete = check.call(sourceMatrix);
+                    progressTicks[index].textContent = isComplete ? '✅' : index + 1;
+                    progressTicks[index].style.color = isComplete ? 'green' : 'grey';
+                });
+            }
+            
 
             // Handle click for btnSubtract
             document.getElementById('btnSubtract').addEventListener('click', function() {
@@ -158,6 +177,7 @@
 
                         // Subtract the first selected row from the second in the destination matrix, using factor as the third parameter
                         dest.subtractRows(selectedDestRows[0], selectedDestRows[1], factor);
+                        updateProgressPanel();
                     } else {
                         alert("Please select exactly two rows in each matrix to perform subtraction.");
                     }
@@ -217,6 +237,7 @@
                     source.swapRows(selectedSourceRows[0], selectedSourceRows[1]);
                     // Swap rows in the destination matrix
                     dest.swapRows(selectedDestRows[0], selectedDestRows[1]);
+                    updateProgressPanel();
                 }
             };
             document.getElementById('btnSwap').addEventListener('click', swapRows);
@@ -240,6 +261,7 @@
                     selectedDestRows.forEach(rowIndex => {
                         dest.multiplyRow(rowIndex, factor);
                     });
+                    updateProgressPanel();
                 } else {
                     alert("Invalid input. Please enter a valid number.");
                 }
