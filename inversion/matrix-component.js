@@ -136,6 +136,15 @@ class MatrixComponent extends HTMLElement {
         }
       }
       
+      gcd(a, b) {
+        // Euclidean algorithm to find the greatest common divisor
+        while (b !== 0) {
+            let t = b;
+            b = a % b;
+            a = t;
+        }
+        return a;
+    }
 
       convertDecimalToFraction(floatValue, tolerance = 0.0001) {
         let isNegative = false;
