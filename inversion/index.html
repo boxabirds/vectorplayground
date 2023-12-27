@@ -109,10 +109,13 @@
             const multiplyOptions = document.getElementById('multiplyOptions');
 
             const parseFraction = (input) => {
-                const mixedFractionMatch = input.match(/^(-?\d+)\s*(-?\d+)\/(\d+)$/); // Match mixed fractions like "-2 3/5"
-                const fractionMatch = input.match(/^(-?\d+)\/(\d+)$/); // Match simple fractions like "3/5"
+                // Match mixed fractions like "-2 3/5", ensuring there's a space between the whole part and the fraction part
+                const mixedFractionMatch = input.match(/^(-?\d+)\s+(-?\d+)\/(\d+)$/);
+                // Match simple fractions like "3/5"
+                const fractionMatch = input.match(/^(-?\d+)\/(\d+)$/);
                 
                 if (mixedFractionMatch) {
+                    console.log("parseFraction: found a mixed fraction")
                     const whole = parseInt(mixedFractionMatch[1], 10); // Parse the whole part
                     const numerator = parseInt(mixedFractionMatch[2], 10); // Parse the numerator
                     const denominator = parseInt(mixedFractionMatch[3], 10); // Parse the denominator
@@ -124,9 +127,11 @@
                         return null;
                     }
                 } else if (fractionMatch) {
+                    console.log("parseFraction: found fraction with no whole part")
                     const numerator = parseInt(fractionMatch[1], 10); // Parse as integer
                     const denominator = parseInt(fractionMatch[2], 10); // Parse as integer
                     if (denominator !== 0) { // Ensure the denominator is not zero
+                        console.log( "parseFraction: returning " + numerator + " / " + denominator);
                         return numerator / denominator;
                     } else {
                         alert("Invalid fraction. The denominator cannot be zero.");

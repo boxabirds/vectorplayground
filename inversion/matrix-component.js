@@ -241,14 +241,14 @@ class MatrixComponent extends HTMLElement {
     
                     // Determine how to display the value: as a decimal, as a whole number, or as a fraction
                     const displayValue = denominator !== 1 ?
-                        `${wholePart !== 0 ? `<span class="whole-part">${wholePart}</span>` : ''}` +
+                        `${wholePart !== 0 ? `<span class="whole-part">${Math.round(wholePart)}</span>` : ''}` +
                         `<span class="fraction">` +
                             `${isNegative ? `<span class="sign">-</span>` : ''}` +
                             `<span class="numerator-content">${absNumerator}</span>` +
                             `<span class="fraction-separator"></span>` +
                             `<span class="denominator">${denominator}</span>` +
                         `</span>` :
-                        val.toString();
+                        Math.round(val).toString();
     
                     return `<div class="matrix-cell">
                                 <div class="content-wrapper">
