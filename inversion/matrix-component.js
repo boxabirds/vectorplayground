@@ -7,6 +7,7 @@ class MatrixComponent extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
         this._matrix = this.initializeMatrix();
+        this.tolerance = 0.0001;
         this._readonly = false;
         this.selectionOrder = []; // FIFO queue to manage selection state
         this._maxSelection = 1; // Default max selection is 1
@@ -145,34 +146,37 @@ class MatrixComponent extends HTMLElement {
         }
         return a;
     }
-  
-      convertDecimalToFraction(floatValue, tolerance = 0.0001) {
+    convertDecimalToFraction(floatValue, tolerance = 0.0001, improper = true) {
         let isNegative = false;
         if (floatValue < 0) {
           isNegative = true;
           floatValue = Math.abs(floatValue);
         }
-    
-        // Separate the whole number and fractional parts
-        let wholePart = Math.floor(floatValue);
-        let fractionalPart = floatValue - wholePart;
-    
+      
+        // Define variables outside the if-else scope for later use
+        let wholePart = 0;
+        let fractionalPart = floatValue;
+      
+        // When improper is false, separate the number into whole and fractional parts
+        if (!improper) {
+          wholePart = Math.floor(floatValue);
+          fractionalPart = floatValue - wholePart;
+        }
+      
         if (Math.abs(fractionalPart) < tolerance || Math.abs(fractionalPart - 1) < tolerance) {
-          // If the fractional part is close to 1, adjust the whole part
-          if (Math.abs(fractionalPart - 1) < tolerance) {
+          if (Math.abs(fractionalPart - 1) < tolerance && !improper) {
             wholePart++;
           }
-          // Apply the negative sign if the original value was negative
           wholePart = isNegative ? -wholePart : wholePart;
           return [wholePart, 0, 1];
         }
-    
+      
         let numerator = 1;
         let h1 = 0;
         let denominator = 0;
         let h2 = 1;
         let b = fractionalPart;
-    
+      
         do {
           const a = Math.floor(b);
           let aux = numerator;
@@ -183,36 +187,29 @@ class MatrixComponent extends HTMLElement {
           h2 = aux;
           b = 1 / (b - a);
         } while (Math.abs(fractionalPart - numerator / denominator) > fractionalPart * tolerance);
-    
-        // Simplify the fraction using gcd
+      
         let commonDivisor = this.gcd(Math.abs(numerator), denominator);
         numerator /= commonDivisor;
         denominator /= commonDivisor;
-    
-        // Adjust for edge cases near whole numbers
-        if (Math.abs(fractionalPart - 1) < tolerance) {
+      
+        if (improper || Math.abs(fractionalPart - 1) < tolerance) {
+          wholePart = 0; // For improper fractions, the whole part is always 0
+        } else if (Math.abs(fractionalPart - 1) < tolerance) {
           wholePart += (isNegative ? -1 : 1);
           numerator = 0;
         }
-    
-        // Apply the negative sign if necessary
+      
         if (isNegative) {
-          if (wholePart === 0 && numerator !== 0) {
-            numerator = -numerator; // Apply the negative sign to the numerator
-          } else {
-            wholePart = -wholePart; // Apply the negative sign to the whole part
-          }
+          numerator = -numerator;
         }
-    
-        // Special handling for extremely small numbers not close to whole numbers
+      
         if (Math.abs(floatValue) < tolerance && numerator !== 0) {
           return [0, isNegative ? -numerator : numerator, denominator];
         }
-    
-        return [wholePart, numerator, denominator];
-    }
-    
       
+        return [wholePart, numerator, denominator];
+      }
+           
       
     generateRandomInvertibleMatrix(n) {
         // we could generate a matrix using compositions but the numbers might end up being very large (hundreds or thousands)
@@ -448,96 +445,98 @@ class MatrixComponent extends HTMLElement {
         }
     }
   
-    hasAtLeastOneNonZeroOnDiagonal() {
-      for (let i = 0; i < Math.min(this._matrix.length, this._matrix[0].length); i++) {
-          if (this._matrix[i][i] !== 0) {
-              return true;
-          }
-      }
-      return false;
-  }
-  
-  // Normalize the first pivot (non-zero element of the first row) to 1
-  firstPivotNormalizedTo1() {
-      for (let i = 0; i < this._matrix[0].length; i++) {
-          if (this._matrix[0][i] !== 0) {
-              return this._matrix[0][i] === 1;
-          }
-      }
-      return false; // No non-zero element found in the first row
-  }
-  
-  // Check if the matrix is in upper triangular form
-  isUpperTriangularForm() {
-      for (let i = 1; i < this._matrix.length; i++) {
-          for (let j = 0; j < i; j++) {
-              if (this._matrix[i][j] !== 0) {
-                  return false;
-              }
-          }
-      }
-      return true;
-  }
-  
-  // Check if all diagonal elements are 1
-  allDiagonalsAre1() {
-      for (let i = 0; i < Math.min(this._matrix.length, this._matrix[0].length); i++) {
-          if (this._matrix[i][i] !== 1) {
-              return false;
-          }
-      }
-      return true;
-  }
-  
-  // Check if the matrix is in row echelon form
-  isInRowEchelonForm() {
-      let lastNonZeroRow = -1;
-      for (let i = 0; i < this._matrix.length; i++) {
-          let firstNonZeroIndex = this._matrix[i].findIndex(value => value !== 0);
-          if (firstNonZeroIndex === -1) {
-              continue; // Skip all-zero rows
-          }
-          if (firstNonZeroIndex <= lastNonZeroRow) {
-              return false; // A leading entry is not to the right of the one above it
-          }
-          lastNonZeroRow = firstNonZeroIndex;
-      }
-      return true;
-  }
-  
-  // Check if the matrix is in reduced row echelon form
-  isInReducedRowEchelonForm() {
-      if (!this.isInRowEchelonForm()) {
-          return false;
-      }
-      for (let i = 0; i < this._matrix.length; i++) {
-          let firstNonZeroIndex = this._matrix[i].findIndex(value => value !== 0);
-          if (firstNonZeroIndex !== -1 && this._matrix[i][firstNonZeroIndex] !== 1) {
-              return false; // Leading entry is not 1
-          }
-          for (let j = i + 1; j < this._matrix.length; j++) {
-              if (this._matrix[j][firstNonZeroIndex] !== 0) {
-                  return false; // Entries above and below the leading 1 are not 0
-              }
-          }
-      }
-      return true;
-  }
-  
-  isIdentity() {
-    if (!this._matrix || this._matrix.length === 0 || this._matrix.length !== this._matrix[0].length) {
-        return false; // Ensure the matrix is square
+    approxEqual(a, b, tolerance) {
+        return Math.abs(a - b) <= tolerance;
     }
-  
-    for (let i = 0; i < this._matrix.length; i++) {
-        for (let j = 0; j < this._matrix[i].length; j++) {
-            if ((i === j && this._matrix[i][j] !== 1) || (i !== j && this._matrix[i][j] !== 0)) {
-                return false; // Check for 1s on the diagonal and 0s elsewhere
+
+    hasAtLeastOneNonZeroOnDiagonal() {
+        for (let i = 0; i < Math.min(this._matrix.length, this._matrix[0].length); i++) {
+            if (Math.abs(this._matrix[i][i]) > this.tolerance) {
+                console.log("Matrix has at least one non-zero on diagonal:", this._matrix);
+                return true;
             }
         }
+        console.log("Matrix has no non-zero on diagonal:", this._matrix);
+        return false;
     }
-    return true;
-  }
+
+    firstPivotNormalizedTo1() {
+        for (let i = 0; i < this._matrix[0].length; i++) {
+            if (Math.abs(this._matrix[0][i] - 1) <= this.tolerance) {
+                console.log("Matrix has first pivot normalized to 1? t/f: " + true + " matrix:", this._matrix);
+                return true;
+            }
+        }
+        return false; // No non-zero element found in the first row
+    }
+
+    isUpperTriangularForm() {
+        for (let i = 1; i < this._matrix.length; i++) {
+            for (let j = 0; j < i; j++) {
+                if (Math.abs(this._matrix[i][j]) > this.tolerance) {
+                    console.log("Matrix is in upper triangular form? t/f: " + false + " matrix:", this._matrix);
+                    return false;
+                }
+            }
+        }
+        console.log("Matrix is in upper triangular form? t/f: " + true + " matrix:", this._matrix);
+        return true;
+    }
+
+    allDiagonalsAre1() {
+        for (let i = 0; i < Math.min(this._matrix.length, this._matrix[0].length); i++) {
+            if (!this.approxEqual(this._matrix[i][i], 1, this.tolerance)) {
+                console.log("Matrix has all diagonal elements equal to 1? t/f: " + false + " matrix:", this._matrix);
+                return false;
+            }
+        }
+        console.log("Matrix has all diagonal elements equal to 1? t/f: " + true + " matrix:", this._matrix);
+        return true;
+    }
+
+    isInRowEchelonForm() {
+        let lastNonZeroRow = -1;
+        for (let i = 0; i < this._matrix.length; i++) {
+            let firstNonZeroIndex = this._matrix[i].findIndex(value => Math.abs(value) > this.tolerance);
+            if (firstNonZeroIndex === -1) continue; // Skip all-zero rows
+            if (firstNonZeroIndex <= lastNonZeroRow) {
+                console.log("Matrix is in row echelon form? t/f: " + false + " matrix:", this._matrix);
+                return false; // A leading entry is not to the right of the one above it
+            }
+            lastNonZeroRow = firstNonZeroIndex;
+        }
+        console.log("Matrix is in row echelon form? t/f: " + true + " matrix:", this._matrix);
+        return true;
+    }
+
+    isInReducedRowEchelonForm() {
+        if (!this.isInRowEchelonForm()) return false;
+        for (let i = 0; i < this._matrix.length; i++) {
+            let firstNonZeroIndex = this._matrix[i].findIndex(value => Math.abs(value) > this.tolerance);
+            if (firstNonZeroIndex !== -1 && !this.approxEqual(this._matrix[i][firstNonZeroIndex], 1, this.tolerance)) return false; // Leading entry is not 1
+            for (let j = i + 1; j < this._matrix.length; j++) {
+                if (Math.abs(this._matrix[j][firstNonZeroIndex]) > this.tolerance) return false; // Entries above and below the leading 1 are not 0
+            }
+        }
+        return true;
+    }
+
+    isIdentity() {
+        if (!this._matrix || this._matrix.length === 0 || this._matrix.length !== this._matrix[0].length) {
+            console.log("Matrix is identity? t/f: " + false + " matrix:", this._matrix);
+            return false; // Ensure the matrix is square
+        }
+        for (let i = 0; i < this._matrix.length; i++) {
+            for (let j = 0; j < this._matrix[i].length; j++) {
+                if ((i === j && !this.approxEqual(this._matrix[i][j], 1, this.tolerance)) || (i !== j && Math.abs(this._matrix[i][j]) > this.tolerance)) {
+                    console.log("Matrix is identity? t/f: " + false + " matrix:", this._matrix);
+                    return false; // Check for 1s on the diagonal and 0s elsewhere
+                }
+            }
+        }
+        console.log("Matrix is identity? t/f: " + true + " matrix:", this._matrix);
+        return true;
+    }
   
     get readonly() {
         return this._readonly;
