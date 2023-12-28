@@ -302,18 +302,13 @@ class MatrixComponent extends HTMLElement {
                     border: 3px solid transparent;
                     border-radius: 5px;
                     box-sizing: border-box;
-                    transition: border-color 0.2s;
+                    transition: border-color 0.3s;
                 }
                 
                 .selected-row {
                     background: rgba(255, 255, 0, 0.2);
                     border-color: goldenrod;
                 }
-
-                .selected-row.fading-selection {
-                    transition: opacity 0.5s ease-out;
-                    opacity: 0; /* Fades the selection to transparent */
-                  }
                                 
                 .matrix-cell {
                     flex: 1;
@@ -360,6 +355,7 @@ class MatrixComponent extends HTMLElement {
                     0% { transform: translateY(0); }
                     100% { transform: translateY(calc(var(--move-distance) * 2.3em)); } /* TODO should explicitly take into account row height */
                 }
+
                 .readonly-cell {
                     display: inline-block;
                     width: 40px; /* Adjust to match your input field size */
@@ -604,14 +600,16 @@ class MatrixComponent extends HTMLElement {
         return this.selectionOrder.slice(); // return a copy of the selectionOrder array
     }
   
-    clearSelection(isUserAction=true) {
+    clearSelection(isUserAction = true) {
+        let oldSelections = this.selectionOrder;
         this.selectionOrder = [];
         this.updateRowStyles();
         if (isUserAction) {
+            this.dispatchRowSelectionEvent(oldSelections, false);
             this.dispatchSelectionChanged();
         }
-
     }
+    
 
     subtractRows(rowIndex1, rowIndex2, factor) {
         if (rowIndex1 < this._matrix.length && rowIndex2 < this._matrix.length) {
