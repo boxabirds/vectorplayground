@@ -81,13 +81,10 @@
     <script src="matrix-component.js"></script>
 
     <div id="progressPanel">
-        <div class="progressTick">✅</div>
+        <div class="progressTick">1</div>
         <div class="progressTick">2</div>
         <div class="progressTick">3</div>
         <div class="progressTick">4</div>
-        <div class="progressTick">5</div>
-        <div class="progressTick">6</div>
-        <div class="progressTick">7</div>
         <div id="statusText">Ready to invert!</div>
     </div>
 
@@ -148,11 +145,8 @@
             function updateProgressPanel() {
                 const sourceMatrix = document.getElementById('source-matrix');
                 const checks = [
-                    sourceMatrix.hasAtLeastOneNonZeroOnDiagonal,
                     sourceMatrix.firstPivotNormalizedTo1,
-                    sourceMatrix.isUpperTriangularForm,
                     sourceMatrix.isInRowEchelonForm,
-                    sourceMatrix.allDiagonalsAre1,
                     sourceMatrix.isInReducedRowEchelonForm,
                     sourceMatrix.isIdentity
                 ];
