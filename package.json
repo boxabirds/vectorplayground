@@ -23,5 +23,9 @@
   },
   "jest": {
     "testEnvironment": "<rootDir>/inversion/__tests__/jest-environment-jsdom-global.js"
+  },
+  "dependencies": {
+    "@aws-cdk/aws-s3": "^1.204.0",
+    "@aws-cdk/aws-s3-deployment": "^1.204.0"
   }
 }
