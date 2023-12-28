@@ -309,7 +309,12 @@ class MatrixComponent extends HTMLElement {
                     background: rgba(255, 255, 0, 0.2);
                     border-color: goldenrod;
                 }
-                
+
+                .selected-row.fading-selection {
+                    transition: opacity 0.5s ease-out;
+                    opacity: 0; /* Fades the selection to transparent */
+                  }
+                                
                 .matrix-cell {
                     flex: 1;
                     display: flex;
@@ -353,7 +358,7 @@ class MatrixComponent extends HTMLElement {
     
                 @keyframes moveRow {
                     0% { transform: translateY(0); }
-                    100% { transform: translateY(calc(var(--move-distance) * 2em)); } /* This will change based on direction */
+                    100% { transform: translateY(calc(var(--move-distance) * 2.3em)); } /* TODO should explicitly take into account row height */
                 }
                 .readonly-cell {
                     display: inline-block;
@@ -599,7 +604,15 @@ class MatrixComponent extends HTMLElement {
         return this.selectionOrder.slice(); // return a copy of the selectionOrder array
     }
   
-  
+    clearSelection(isUserAction=true) {
+        this.selectionOrder = [];
+        this.updateRowStyles();
+        if (isUserAction) {
+            this.dispatchSelectionChanged();
+        }
+
+    }
+
     subtractRows(rowIndex1, rowIndex2, factor) {
         if (rowIndex1 < this._matrix.length && rowIndex2 < this._matrix.length) {
             // Loop through each column in the row
@@ -609,7 +622,7 @@ class MatrixComponent extends HTMLElement {
             }
     
             this.render(); // Re-render to update the UI
-            this.updateRowStyles();
+            this.clearSelection();
             // Dispatch an event to notify of the row subtraction
             this.dispatchEvent(new CustomEvent('rowsubtracted', { detail: { subtractedFrom: rowIndex2, subtracted: rowIndex1, factor: factor } }));
         } else {
@@ -628,7 +641,7 @@ class MatrixComponent extends HTMLElement {
             }
   
             this.render();
-            this.updateRowStyles();
+            this.clearSelection();
             // Dispatch an event to notify of the change
             this.dispatchEvent(new CustomEvent('rowmultiplied', { detail: { rowIndex, factor } }));
         } else {
@@ -672,7 +685,7 @@ class MatrixComponent extends HTMLElement {
                 });
   
                 this.render();
-                this.updateRowStyles();
+                this.clearSelection();
                 this.dispatchEvent(new CustomEvent('rowswapped', { detail: { rowIndex1, rowIndex2 } }));
             };
   
