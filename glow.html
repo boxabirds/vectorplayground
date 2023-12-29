@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Golden Glow Test Harness</title>
+<style>
+  /* CSS for the Golden Glow Effect */
+  .glow-effect {
+    animation: goldenGlowFade 1s forwards;
+  }
+
+  @keyframes goldenGlowFade {
+    0% {
+      box-shadow: 0 0 10px 5px rgba(255, 215, 0, 1); /* Solid gold color */
+    }
+    100% {
+      box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0); /* Fully transparent */
+    }
+  }
+
+  /* Additional styling for visibility */
+  .test-element {
+    margin: 10px;
+    padding: 20px;
+    border: 1px solid #ccc;
+    display: inline-block;
+  }
+</style>
+</head>
+<body>
+
+<!-- Test HTML Elements -->
+<div id="element1" class="test-element">Element 1</div>
+<div id="element2" class="test-element">Element 2</div>
+<div id="element3" class="test-element">Element 3</div>
+
+<!-- Button to Trigger the Glow Effect -->
+<button id="triggerGlow">Trigger Golden Glow</button>
+
+<script>
+  // JavaScript function to apply the golden glow effect by IDs
+  function applyGoldenGlowByIds(ids) {
+    ids.forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+        // Remove the class if it's already there to reset the animation
+        if(element.classList.contains('glow-effect')) {
+          element.classList.remove('glow-effect');
+
+          // Hack to trigger reflow/repaint to restart the animation
+          void element.offsetWidth;
+        }
+        
+        // Add the glow-effect class
+        element.classList.add('glow-effect');
+
+        // Remove the class after animation ends to allow it to be reapplied
+        element.addEventListener('animationend', () => {
+          element.classList.remove('glow-effect');
+        }, {once: true}); // Use {once: true} so the event is only fired once and then removed
+      }
+    });
+  }
+
+  // Event listener for the button click
+  document.getElementById('triggerGlow').addEventListener('click', () => {
+    // Apply the golden glow effect to the specified elements
+    applyGoldenGlowByIds(['element1', 'element2', 'element3']);
+  });
+</script>
+
+</body>
+</html>

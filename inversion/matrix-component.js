@@ -1,3 +1,14 @@
+// Note: this code has been substantially coded by ChatGPT
+// under my software engineering design guidance.
+// Unfortunately the early decision to work directly with innerHTML has created
+// a local maxima that is not easy to refactor as of Dec 2023: certain animations will
+// fail due to the constant rewriting of the shadow DOM. 
+// I have tried to refactor the code to work with incremental
+// changes to the DOM, but it requires detailed knowledge of CSS and the DOM
+// beyond what I know personally. No AI I've tried (phind, perplexity, claude, chatgpt)
+// can take this file and refactor it to work with incremental changes to the DOM as of Dec 2023.
+
+
 class MatrixComponent extends HTMLElement {
     static get observedAttributes() {
         return ['readonly', 'rows', 'cols', 'max-selections']; // Add 'max-selection' to observed attributes
@@ -20,11 +31,38 @@ class MatrixComponent extends HTMLElement {
             if (this.selectionOrder.includes(index)) {
                 row.classList.add('selected-row');
             } else {
+                //console.log("deselecting row " + index);
                 row.classList.remove('selected-row');
             }
         });
     }
   
+    applyGlowEffect(element) {
+        if(element.classList.contains('glow-effect')) {
+            element.classList.remove('glow-effect');
+            // Hack to trigger reflow/repaint to restart the animation
+            void element.offsetWidth;
+        }
+        element.classList.add('glow-effect');
+
+        // Remove the class after animation ends to allow it to be reapplied
+        element.addEventListener('animationend', () => {
+            element.classList.remove('glow-effect');
+        }, {once: true});
+    }
+
+    applyGlowToCells(cellIds) {
+        console.log("applying glow to cells: " + cellIds);
+        cellIds.forEach(id => {
+            const cell = this.shadowRoot.getElementById(id);
+            console.log("cell: " + cell);
+            if (cell) {
+                console.log("cell actually exists: " + cell);
+                this.applyGlowEffect(cell);
+            }
+        });
+    }
+
     // Dispatch custom events for row selection/deselection
     dispatchRowSelectionEvent(rowIndex, isSelected) {
         const eventName = isSelected ? 'rowselected' : 'rowdeselected';
@@ -250,7 +288,7 @@ class MatrixComponent extends HTMLElement {
                     return `<div class="matrix-cell">
                                 <div class="content-wrapper">
                                     ${this._readonly ? 
-                                        `<div class="readonly-cell">${displayValue}</div>` : 
+                                        `<div class="readonly-cell" id="m${i}${j}">${displayValue}</div>` : 
                                         `<input class="cell-input" id="m${i}${j}" value="${val}">`}
                                 </div>
                             </div>`;
@@ -402,7 +440,19 @@ class MatrixComponent extends HTMLElement {
                     left: -0.6em; /* Adjust as necessary */
                     text-align: left;
                 }
-               
+                .glow-effect {
+                    animation: goldenGlowFade 1s forwards;
+                }
+    
+                @keyframes goldenGlowFade {
+                    0% {
+                    box-shadow: 0 0 10px 5px rgba(255, 215, 0, 1); /* Solid gold color */
+                    }
+                    100% {
+                    box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0); /* Fully transparent */
+                    }
+                }
+                   
                 </style>
                 <div class="matrix-container">
                     <div class="bracket">\u005B</div>
@@ -450,15 +500,62 @@ class MatrixComponent extends HTMLElement {
         return Math.abs(a - b) <= tolerance;
     }
 
-    hasAtLeastOneNonZeroOnDiagonal() {
-        for (let i = 0; i < Math.min(this._matrix.length, this._matrix[0].length); i++) {
-            if (Math.abs(this._matrix[i][i]) > this.tolerance) {
-                console.log("Matrix has at least one non-zero on diagonal:", this._matrix);
-                return true;
+    findFirstPivotElementNormalizedTo1() {
+        let elements = [];
+        for (let i = 0; i < this._matrix[0].length; i++) {
+            if (Math.abs(this._matrix[0][i] - 1) <= this.tolerance) {
+                elements.push(`m0${i}`);
+                return elements;
             }
         }
-        console.log("Matrix has no non-zero on diagonal:", this._matrix);
-        return false;
+        return []; // Return empty array if condition is not met
+    }
+
+    findEchelonFormCells() {
+        let lastNonZeroRow = -1;
+        let elements = [];
+        for (let i = 0; i < this._matrix.length; i++) {
+            let firstNonZeroIndex = this._matrix[i].findIndex(value => Math.abs(value) > this.tolerance);
+            if (firstNonZeroIndex === -1) continue; // Skip all-zero rows
+            if (firstNonZeroIndex <= lastNonZeroRow) {
+                return []; // Return empty array as it's not in echelon form
+            }
+            elements.push(`m${i}${firstNonZeroIndex}`);
+            lastNonZeroRow = firstNonZeroIndex;
+        }
+        return elements; // Return collected element IDs
+    }
+
+    findReducedRowEchelonFormCells() {
+        if (!this.findEchelonFormCells().length) return [];
+        let elements = [];
+        for (let i = 0; i < this._matrix.length; i++) {
+            let firstNonZeroIndex = this._matrix[i].findIndex(value => Math.abs(value) > this.tolerance);
+            if (firstNonZeroIndex !== -1) {
+                if (!this.approxEqual(this._matrix[i][firstNonZeroIndex], 1, this.tolerance)) return []; // Not reduced form
+                elements.push(`m${i}${firstNonZeroIndex}`);
+                for (let j = i + 1; j < this._matrix.length; j++) {
+                    if (Math.abs(this._matrix[j][firstNonZeroIndex]) > this.tolerance) return []; // Not reduced form
+                }
+            }
+        }
+        return elements;
+    }
+
+    findIdentityCells() {
+        if (!this._matrix || this._matrix.length === 0 || this._matrix.length !== this._matrix[0].length) {
+            return []; // Not a square matrix, hence not identity
+        }
+        let elements = [];
+        for (let i = 0; i < this._matrix.length; i++) {
+            for (let j = 0; j < this._matrix[i].length; j++) {
+                if ((i === j && !this.approxEqual(this._matrix[i][j], 1, this.tolerance)) || (i !== j && Math.abs(this._matrix[i][j]) > this.tolerance)) {
+                    return []; // Not an identity matrix
+                }
+                if (i === j) elements.push(`m${i}${j}`); // Collect diagonal elements
+            }
+        }
+        return elements;
     }
 
     firstPivotNormalizedTo1() {
@@ -471,29 +568,6 @@ class MatrixComponent extends HTMLElement {
         return false; // No non-zero element found in the first row
     }
 
-    isUpperTriangularForm() {
-        for (let i = 1; i < this._matrix.length; i++) {
-            for (let j = 0; j < i; j++) {
-                if (Math.abs(this._matrix[i][j]) > this.tolerance) {
-                    console.log("Matrix is in upper triangular form? t/f: " + false + " matrix:", this._matrix);
-                    return false;
-                }
-            }
-        }
-        console.log("Matrix is in upper triangular form? t/f: " + true + " matrix:", this._matrix);
-        return true;
-    }
-
-    allDiagonalsAre1() {
-        for (let i = 0; i < Math.min(this._matrix.length, this._matrix[0].length); i++) {
-            if (!this.approxEqual(this._matrix[i][i], 1, this.tolerance)) {
-                console.log("Matrix has all diagonal elements equal to 1? t/f: " + false + " matrix:", this._matrix);
-                return false;
-            }
-        }
-        console.log("Matrix has all diagonal elements equal to 1? t/f: " + true + " matrix:", this._matrix);
-        return true;
-    }
 
     isInRowEchelonForm() {
         let lastNonZeroRow = -1;

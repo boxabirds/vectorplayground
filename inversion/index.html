@@ -144,20 +144,35 @@
 
             function updateProgressPanel() {
                 const sourceMatrix = document.getElementById('source-matrix');
+                let lastSuccessfulMethod = null;  // Variable to store the last successful method and elements
+                let lastSuccessfulIds = [];  // Variable to store IDs from the last successful method
                 const checks = [
-                    sourceMatrix.firstPivotNormalizedTo1,
-                    sourceMatrix.isInRowEchelonForm,
-                    sourceMatrix.isInReducedRowEchelonForm,
-                    sourceMatrix.isIdentity
+                    {method: sourceMatrix.findFirstPivotElementNormalizedTo1, name: 'findFirstPivotElementNormalizedTo1'},
+                    {method: sourceMatrix.findEchelonFormCells, name: 'findEchelonFormCells'},
+                    {method: sourceMatrix.findReducedRowEchelonFormCells, name: 'findReducedRowEchelonFormCells'},
+                    {method: sourceMatrix.findIdentityCells, name: 'findIdentityCells'}
                 ];
                 const progressTicks = document.querySelectorAll('.progressTick');
                 checks.forEach((check, index) => {
-                    const isComplete = check.call(sourceMatrix);
+                    const result = check.method.call(sourceMatrix);
+                    const isComplete = Array.isArray(result) && result.length > 0;
+                    if (isComplete) {
+                        lastSuccessfulMethod = check.name;  // Update the last successful method
+                        lastSuccessfulIds = result;  // Update the last successful IDs
+                    }
                     progressTicks[index].textContent = isComplete ? '✅' : index + 1;
                     progressTicks[index].style.color = isComplete ? 'green' : 'grey';
                 });
+
+                // At the end, use the IDs from the last successful method to add a glow animation
+                // glow isn't very interesting with current implementation: just the diagonals
+                // if (lastSuccessfulIds.length > 0) {
+                //     sourceMatrix.applyGlowToCells(lastSuccessfulIds);
+                //     console.log('Last successful method:', lastSuccessfulMethod, 'IDs:', lastSuccessfulIds);
+                // }
+
             }
-            
+
 
             // Handle click for btnSubtract
             document.getElementById('btnSubtract').addEventListener('click', function() {
