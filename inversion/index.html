@@ -147,10 +147,10 @@
                 let lastSuccessfulMethod = null;  // Variable to store the last successful method and elements
                 let lastSuccessfulIds = [];  // Variable to store IDs from the last successful method
                 const checks = [
-                    {method: sourceMatrix.findFirstPivotElementNormalizedTo1, name: 'findFirstPivotElementNormalizedTo1'},
-                    {method: sourceMatrix.findEchelonFormCells, name: 'findEchelonFormCells'},
-                    {method: sourceMatrix.findReducedRowEchelonFormCells, name: 'findReducedRowEchelonFormCells'},
-                    {method: sourceMatrix.findIdentityCells, name: 'findIdentityCells'}
+                    {method: sourceMatrix.findFirstPivotElementNormalizedTo1, name: 'First pivot normalised to 1'},
+                    {method: sourceMatrix.findEchelonFormCells, name: 'Echelon form'},
+                    {method: sourceMatrix.findReducedRowEchelonFormCells, name: 'Reduced echelon form'},
+                    {method: sourceMatrix.findIdentityCells, name: 'Identity matrix'}
                 ];
                 const progressTicks = document.querySelectorAll('.progressTick');
                 checks.forEach((check, index) => {
@@ -166,10 +166,11 @@
 
                 // At the end, use the IDs from the last successful method to add a glow animation
                 // glow isn't very interesting with current implementation: just the diagonals
-                // if (lastSuccessfulIds.length > 0) {
-                //     sourceMatrix.applyGlowToCells(lastSuccessfulIds);
-                //     console.log('Last successful method:', lastSuccessfulMethod, 'IDs:', lastSuccessfulIds);
-                // }
+                if (lastSuccessfulIds.length > 0) {
+                    sourceMatrix.applyGlowToCells(lastSuccessfulIds);
+                    console.log('Last successful method:', lastSuccessfulMethod, 'IDs:', lastSuccessfulIds);
+                    document.getElementById('statusText').textContent = lastSuccessfulMethod;
+                }
 
             }
 
