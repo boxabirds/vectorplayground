@@ -25,7 +25,7 @@
             background-color: #f0f0f0;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start; /* Updated to align items to the left */
             padding: 0 10px;
             position: fixed;
             top: 0;
@@ -40,10 +40,9 @@
         }
 
         #statusText {
-            margin-left: auto;
-            padding-right: 10px;
-        }
-
+            margin-left: 10px; /* Space added between the status ticks and the text */
+            padding-right: 10px; /* Right padding to maintain some space on the right */
+        }       
         #actionTray {
             height: 128px;
             width: 100%;
@@ -146,8 +145,9 @@
                 const sourceMatrix = document.getElementById('source-matrix');
                 let lastSuccessfulMethod = null;  // Variable to store the last successful method and elements
                 let lastSuccessfulIds = [];  // Variable to store IDs from the last successful method
+                let soundPlayed = false;  // Flag to track whether the sound has been played
                 const checks = [
-                    {method: sourceMatrix.findFirstPivotElementNormalizedTo1, name: 'First pivot normalised to 1'},
+                    {method: sourceMatrix.findFirstPivotElementNormalizedTo1, name: 'First pivot normalized to 1'},
                     {method: sourceMatrix.findEchelonFormCells, name: 'Echelon form'},
                     {method: sourceMatrix.findReducedRowEchelonFormCells, name: 'Reduced echelon form'},
                     {method: sourceMatrix.findIdentityCells, name: 'Identity matrix'}
@@ -159,21 +159,25 @@
                     if (isComplete) {
                         lastSuccessfulMethod = check.name;  // Update the last successful method
                         lastSuccessfulIds = result;  // Update the last successful IDs
+                        
+                        // Check if the current method is 'Identity matrix' and the sound has not been played yet
+                        if (check.name === 'Identity matrix' && !this.inversionAchieved) {
+                            const audio = new Audio('complete.wav');
+                            audio.play();
+                            this.inversionAchieved = true;  // Set the flag to true after playing the sound
+                        }
                     }
                     progressTicks[index].textContent = isComplete ? '✅' : index + 1;
                     progressTicks[index].style.color = isComplete ? 'green' : 'grey';
                 });
 
                 // At the end, use the IDs from the last successful method to add a glow animation
-                // glow isn't very interesting with current implementation: just the diagonals
                 if (lastSuccessfulIds.length > 0) {
-                    sourceMatrix.applyGlowToCells(lastSuccessfulIds);
+                    //sourceMatrix.applyGlowToCells(lastSuccessfulIds);
                     console.log('Last successful method:', lastSuccessfulMethod, 'IDs:', lastSuccessfulIds);
                     document.getElementById('statusText').textContent = lastSuccessfulMethod;
                 }
-
             }
-
 
             // Handle click for btnSubtract
             document.getElementById('btnSubtract').addEventListener('click', function() {
