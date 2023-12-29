@@ -22,20 +22,21 @@ class MatrixComponent extends HTMLElement {
         this._readonly = false;
         this.selectionOrder = []; // FIFO queue to manage selection state
         this._maxSelection = 1; // Default max selection is 1
+        this.inversionAchieved = false;
     }
   
   
-    updateRowStyles() {
-        const rows = this.shadowRoot.querySelectorAll('.matrix-row');
-        rows.forEach((row, index) => {
-            if (this.selectionOrder.includes(index)) {
-                row.classList.add('selected-row');
-            } else {
-                //console.log("deselecting row " + index);
-                row.classList.remove('selected-row');
-            }
-        });
-    }
+    // updateRowStyles() {
+    //     const rows = this.shadowRoot.querySelectorAll('.matrix-row');
+    //     rows.forEach((row, index) => {
+    //         if (this.selectionOrder.includes(index)) {
+    //             row.classList.add('selected-row');
+    //         } else {
+    //             //console.log("deselecting row " + index);
+    //             row.classList.remove('selected-row');
+    //         }
+    //     });
+    // }
   
     applyGlowEffect(element) {
         if(element.classList.contains('glow-effect')) {
@@ -74,29 +75,29 @@ class MatrixComponent extends HTMLElement {
             this.deselectRow(rowIndex, isUserAction);
             return;
         }
-  
+    
         if (this.selectionOrder.length >= this._maxSelection) {
             const toDeselectIndex = this.selectionOrder.shift(); // Remove the first (oldest) selected row
             this.deselectRow(toDeselectIndex, false);
         }
-  
+    
         this.selectionOrder.push(rowIndex); // Add the new row to the selection queue
-        this.updateRowStyles();
         if (isUserAction) {
             this.dispatchRowSelectionEvent(rowIndex, true);
             this.dispatchSelectionChanged();
         }
+        this.render();
     }
-  
+          
     deselectRow(rowIndex, isUserAction = true) {
         this.selectionOrder = this.selectionOrder.filter(index => index !== rowIndex); // Remove the deselected row
-        this.updateRowStyles();
         if (isUserAction) {
             this.dispatchRowSelectionEvent(rowIndex, false);
             this.dispatchSelectionChanged();
         }
+        this.render();
     }
-  
+          
     dispatchSelectionChanged() {
         const selectedRowsData = this.selectionOrder.map(rowIndex => ({
             rowIndex: rowIndex,
@@ -106,7 +107,11 @@ class MatrixComponent extends HTMLElement {
     }
   
   
-  
+    getUnicodeNumber(number) {
+        const unicodeNumbers = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩', '⑪', '⑫', '⑬', '⑭', '⑮', '⑯', '⑰', '⑱', '⑲', '⑳'];
+        return unicodeNumbers[number - 1] || number.toString();
+    }
+    
   
     onCellClick(event) {
         const cell = event.target.closest('.matrix-cell');
@@ -268,13 +273,16 @@ class MatrixComponent extends HTMLElement {
    
     render() {
         if (this._matrix && Array.isArray(this._matrix) && this._matrix.every(row => Array.isArray(row))) {
-            let content = this._matrix.map((row, i) =>
-                `<div class="matrix-row" id="row-${i}">${row.map((val, j) => {
+            let content = this._matrix.map((row, i) => {
+                const isSelected = this.selectionOrder.includes(i);
+                const selectionClass = isSelected ? 'selected-row' : '';
+                const selectionOrderNumber = isSelected && this.selectionOrder.length > 1 ? `<span class="selection-order">${this.getUnicodeNumber(this.selectionOrder.indexOf(i) + 1)}</span>` : '';
+    
+                return `<div class="matrix-row ${selectionClass}" id="row-${i}">${selectionOrderNumber}${row.map((val, j) => {
                     const [wholePart, numerator, denominator] = this.convertDecimalToFraction(val);
                     const isNegative = numerator < 0;
                     const absNumerator = Math.abs(numerator);
     
-                    // Determine how to display the value: as a decimal, as a whole number, or as a fraction
                     const displayValue = denominator !== 1 ?
                         `${wholePart !== 0 ? `<span class="whole-part">${Math.round(wholePart)}</span>` : ''}` +
                         `<span class="fraction">` +
@@ -292,167 +300,160 @@ class MatrixComponent extends HTMLElement {
                                         `<input class="cell-input" id="m${i}${j}" value="${val}">`}
                                 </div>
                             </div>`;
-                }).join('')}</div>`
-            ).join('');
-               
-  
-            const cols = this._matrix[0].length;
+                }).join('')}</div>`;
+            }).join('');
+    
             this.shadowRoot.innerHTML = `
                 <style>
-                .matrix-container {
-                    display: grid;
-                    grid-template-columns: auto 1fr auto;
-                    grid-template-areas: "left-bracket matrix right-bracket";
-                    align-items: center;
-                    justify-items: center;
-                    gap: 5px;
-                    padding: 5px;
-                    border-radius: 5px;
-                    box-sizing: border-box;
-                    --bracket-size: 1em;
-                }
-                
-                .matrix {
-                    width: 100%;
-                    display: grid;
-                    grid-template-rows: repeat(auto-fill, minmax(min-content, max-content));
-                    gap: 2px;
-                    grid-area: matrix;
-                }
-                
-                .bracket {
-                    margin-top: -20px;
-                    font-size: var(--bracket-size);
-                    font-family: "Arial Narrow", Arial, Helvetica, sans-serif;
-                    font-weight: lighter;
-                    user-select: none;
-                    grid-area: left-bracket; /* For the left bracket */
-                }
-                
-                .bracket:last-child {
-                    grid-area: right-bracket; /* For the right bracket */
-                }
-                
-                .matrix-row {
-                    display: flex;
-                    gap: 2px;
-                    padding: 0.3em;
-                    border: 3px solid transparent;
-                    border-radius: 5px;
-                    box-sizing: border-box;
-                    transition: border-color 0.3s;
-                }
-                
-                .selected-row {
-                    background: rgba(255, 255, 0, 0.2);
-                    border-color: goldenrod;
-                }
-                                
-                .matrix-cell {
-                    flex: 1;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    position: relative;
-                }
-                
-                .content-wrapper {
-                    display: inline-flex;
-                    position: relative;
-                }
-                
-                .cell-input {
-                    width: 40px; /* Adjust to match your input field size */
-                    height: 20px; /* Adjust to match your input field size */
-                    text-align: center;
-                    border: none;
-                    background-color: transparent;
-                    font-size: 1.2em;
-                    outline: none;
-                    padding: 0;
-                    box-sizing: border-box;
-                }
-                
-                .overlay-content {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%; /* Match parent size */
-                    height: 100%; /* Match parent size */
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    pointer-events: none;
-                    overflow: hidden;
-                }
-                .moving {
-                    animation: moveRow 0.5s ease-in-out forwards;
-                }
-    
-                @keyframes moveRow {
-                    0% { transform: translateY(0); }
-                    100% { transform: translateY(calc(var(--move-distance) * 2.3em)); } /* TODO should explicitly take into account row height */
-                }
-
-                .readonly-cell {
-                    display: inline-block;
-                    width: 40px; /* Adjust to match your input field size */
-                    height: 20px; /* Adjust to match your input field size */
-                    text-align: center;
-                    position: relative;
-                    font-size: 1.2em;
-                }
-                
-                .whole-part {
-                    display: inline-block;
-                    margin-right: 0.1em; /* Positive margin to add space between the whole number and the fraction */
-                    vertical-align: top; /* Aligns the whole part with the top of the cell */
-                }
-  
-                .fraction {
-                    display: inline-flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: flex-start; /* Aligns the fraction to the top */
-                    position: relative;
-                    top: -0.7em; /* Adjust as needed to align with the top edge of the whole part */
-                    font-size: 0.7em; /* Decrease font size to match the height of the whole part */
-                }
-  
-                .numerator-content, .denominator {
-                    display: block;
-                    line-height: 1; /* Ensure the line height doesn't add extra space */
-                    text-align: center;
-                }
-  
-                .fraction-separator {
-                    height: 1px;
-                    background-color: black;
-                    width: 100%;
-                    align-self: center; /* Center the separator within the fraction */
-                }
-  
-                .sign {
-                    display: inline-block;
-                    width: 0; /* Don't take up space */
-                    overflow: visible; /* Make the sign visible outside the width */
-                    position: absolute;
-                    left: -0.6em; /* Adjust as necessary */
-                    text-align: left;
-                }
-                .glow-effect {
-                    animation: goldenGlowFade 1s forwards;
-                }
-    
-                @keyframes goldenGlowFade {
-                    0% {
-                    box-shadow: 0 0 10px 5px rgba(255, 215, 0, 1); /* Solid gold color */
+                    .matrix-container {
+                        display: grid;
+                        grid-template-columns: auto 1fr auto;
+                        grid-template-areas: "left-bracket matrix right-bracket";
+                        align-items: center;
+                        justify-items: center;
+                        gap: 5px;
+                        padding: 5px;
+                        border-radius: 5px;
+                        box-sizing: border-box;
+                        --bracket-size: 1em;
                     }
-                    100% {
-                    box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0); /* Fully transparent */
+    
+                    .matrix {
+                        width: 100%;
+                        display: grid;
+                        grid-template-rows: repeat(auto-fill, minmax(min-content, max-content));
+                        gap: 2px;
+                        grid-area: matrix;
+                        margin-top: 20px;
                     }
-                }
-                   
+    
+                    .bracket {
+                        margin-top: -20px;
+                        font-size: var(--bracket-size);
+                        font-family: "Arial Narrow", Arial, Helvetica, sans-serif;
+                        font-weight: lighter;
+                        user-select: none;
+                        grid-area: left-bracket; /* For the left bracket */
+                    }
+    
+                    .bracket:last-child {
+                        grid-area: right-bracket; /* For the right bracket */
+                    }
+    
+                    .matrix-row {
+                        display: flex;
+                        gap: 2px;
+                        padding: 0.3em;
+                        border: 3px solid transparent;
+                        border-radius: 5px;
+                        box-sizing: border-box;
+                        transition: border-color 0.3s;
+                        position: relative;
+                    }
+    
+                    .selected-row {
+                        background: rgba(255, 255, 0, 0.2);
+                        border-color: goldenrod;
+                    }
+    
+                    .matrix-cell {
+                        flex: 1;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        position: relative;
+                    }
+    
+                    .content-wrapper {
+                        display: inline-flex;
+                        position: relative;
+                    }
+    
+                    .cell-input {
+                        width: 40px; /* Adjust to match your input field size */
+                        height: 20px; /* Adjust to match your input field size */
+                        text-align: center;
+                        border: none;
+                        background-color: transparent;
+                        font-size: 1.2em;
+                        outline: none;
+                        padding: 0;
+                        // margin-top: -0.1em
+                        box-sizing: border-box;
+                    }
+    
+                    .readonly-cell {
+                        display: inline-block;
+                        width: 40px; /* Adjust to match your input field size */
+                        height: 20px; /* Adjust to match your input field size */
+                        text-align: center;
+                        position: relative;
+                        // margin-top: -0.1em
+                        font-size: 1.2em;
+                    }
+    
+                    .whole-part {
+                        display: inline-block;
+                        margin-right: 0.1em;
+                        vertical-align: top;
+                    }
+    
+                    .fraction {
+                        display: inline-flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: flex-start;
+                        position: relative;
+                        top: -0.7em;
+                        font-size: 0.7em;
+                    }
+    
+                    .numerator-content, .denominator {
+                        display: block;
+                        line-height: 1;
+                        text-align: center;
+                    }
+    
+                    .fraction-separator {
+                        height: 1px;
+                        background-color: black;
+                        width: 100%;
+                        align-self: center;
+                    }
+    
+                    .sign {
+                        display: inline-block;
+                        width: 0;
+                        overflow: visible;
+                        position: absolute;
+                        left: -0.6em;
+                        text-align: left;
+                    }
+    
+                    .glow-effect {
+                        animation: goldenGlowFade 1s forwards;
+                    }
+    
+                    @keyframes goldenGlowFade {
+                        0% {
+                            box-shadow: 0 0 10px 5px rgba(255, 215, 0, 1);
+                        }
+                        100% {
+                            box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0);
+                        }
+                    }
+    
+                    .selection-order {
+                        position: absolute;
+                        left: -22px; /* Adjust as needed */
+                        top: 50%;
+                        transform: translateY(-50%);
+                        font-size: 1em; /* Adjust as needed */
+                        /*width: 20px; /* Adjust as needed */
+                        text-align: center;
+                        user-select: none;
+                        z-index: 1;
+                    }
                 </style>
                 <div class="matrix-container">
                     <div class="bracket">\u005B</div>
@@ -460,15 +461,15 @@ class MatrixComponent extends HTMLElement {
                     <div class="bracket">\u005D</div>
                 </div>`;
                 const rows = this._matrix.length;
-                const bracketSize = `${rows * 2.5}em`; // adjust multiplier as needed
+                const bracketSize = `${rows * 3.1}em`; // adjust multiplier as needed
             
                 // ensure the bracket size is same height as number of rows
-                this.shadowRoot.querySelector('.matrix-container').style.setProperty('--bracket-size', bracketSize);
-        } else {
+                this.shadowRoot.querySelector('.matrix-container').style.setProperty('--bracket-size', bracketSize);  
+            } else {
             console.error('Invalid matrix structure:', this._matrix);
         }
     }
-  
+    
     setupListeners() {
         this.shadowRoot.querySelectorAll('input').forEach(input => {
             input.removeEventListener('input', this.handleInput);
@@ -660,16 +661,15 @@ class MatrixComponent extends HTMLElement {
         const val = parseInt(value, 10) || 1;
         if (this._maxSelection !== val) {
             this._maxSelection = val;
-            this.setAttribute('max-selections', val.toString()); // Reflect the property change to the attribute
-            // Handle changing the selection if it exceeds the new max
+            this.setAttribute('max-selections', val.toString());
             while (this.selectionOrder.length > this._maxSelection) {
                 const rowIndex = this.selectionOrder.shift();
                 this.deselectRow(rowIndex, false);
             }
-            this.updateRowStyles();
+            this.render();
         }
     }
-  
+      
     getSelectedRows() {
         return this.selectionOrder.slice(); // return a copy of the selectionOrder array
     }
@@ -677,13 +677,13 @@ class MatrixComponent extends HTMLElement {
     clearSelection(isUserAction = true) {
         let oldSelections = this.selectionOrder;
         this.selectionOrder = [];
-        this.updateRowStyles();
         if (isUserAction) {
-            this.dispatchRowSelectionEvent(oldSelections, false);
+            oldSelections.forEach(rowIndex => this.dispatchRowSelectionEvent(rowIndex, false));
             this.dispatchSelectionChanged();
         }
+        this.render();
     }
-    
+        
 
     subtractRows(rowIndex1, rowIndex2, factor) {
         if (rowIndex1 < this._matrix.length && rowIndex2 < this._matrix.length) {

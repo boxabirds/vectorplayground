@@ -73,9 +73,68 @@
             display: block; 
         }
 
+        .rounded-dialog {
+            border-radius: 15px;
+            padding: 20px;
+            width: 80%;
+            max-width: 400px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .dialog-content h2,
+        .dialog-content,
+        .dialog-content button {
+            text-align: center;
+            width: 100%;
+        }
+
+        .dialog-input {
+            width: 50%; /* Set the width to 50% of its parent */
+            text-align: center;
+            margin: 20px auto; /* Center the input field horizontally */
+            font-size: large;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        #confirmButton {
+            width: 50%;
+            margin: 0 auto;
+            cursor: pointer;
+            padding: 10px 20px;
+            font-size: large;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+        }
+
+        .centered-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 </style>
 </head>
 <body>
+
+    <dialog id="inputDialog" class="rounded-dialog">
+        <div class="dialog-content">
+            <h2 id="dialogTitle">Enter Value</h2>
+            <input type="text" id="textInput" class="dialog-input"/>
+            <div class="centered-content">
+                <button id="confirmButton">Confirm</button>
+            </div>
+        </div>
+    </dialog>
 
     <script src="matrix-component.js"></script>
 
@@ -103,6 +162,28 @@
             const actionTray = document.getElementById('actionTray');
             const addOptions = document.getElementById('addOptions');
             const multiplyOptions = document.getElementById('multiplyOptions');
+            const inputDialog = document.getElementById('inputDialog');
+            const textInput = document.getElementById('textInput');
+            const confirmButton = document.getElementById('confirmButton');
+
+            inputDialog.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    confirmButton.click(); // Simulate the button click
+                }
+            });
+
+            function showInputDialog(title, callback) {
+                console.log("Showing input dialog with title " + title);
+                document.getElementById('dialogTitle').textContent = title;
+                inputDialog.showModal(); // Show the dialog
+                textInput.value = ''; // Clear the previous value
+                textInput.focus(); // Automatically focus the input
+
+                confirmButton.onclick = () => {
+                    inputDialog.close(); // Close the dialog
+                    callback(textInput.value); // Pass the input value to the callback
+                };
+            }
 
             const parseFraction = (input) => {
                 // Match mixed fractions like "-2 3/5", ensuring there's a space between the whole part and the fraction part
@@ -181,28 +262,29 @@
 
             // Handle click for btnSubtract
             document.getElementById('btnSubtract').addEventListener('click', function() {
-                let factor = prompt("How many times do you want to subtract the first from the second row? (Any real number)"); // Prompt for the factor
-                factor = parseFraction(factor);
-                if (factor !== null) {
-                    factor = parseFloat(factor); // Convert the input to a float, allowing for real numbers
-                    
-                    let selectedSourceRows = source.getSelectedRows();
-                    let selectedDestRows = dest.getSelectedRows();
+                showInputDialog("How many times do you want to subtract the first from the second row (number or fraction)?", function(factor) {
+                    factor = parseFraction(factor);
+                    if (factor !== null) {
+                        factor = parseFloat(factor); // Convert the input to a float, allowing for real numbers
+                        
+                        let selectedSourceRows = source.getSelectedRows();
+                        let selectedDestRows = dest.getSelectedRows();
 
-                    // Ensure that two rows are selected in each matrix
-                    if (selectedSourceRows.length === 2 && selectedDestRows.length === 2) {
-                        // Subtract the first selected row from the second in the source matrix, using factor as the third parameter
-                        source.subtractRows(selectedSourceRows[0], selectedSourceRows[1], factor);
+                        // Ensure that two rows are selected in each matrix
+                        if (selectedSourceRows.length === 2 && selectedDestRows.length === 2) {
+                            // Subtract the first selected row from the second in the source matrix, using factor as the third parameter
+                            source.subtractRows(selectedSourceRows[0], selectedSourceRows[1], factor);
 
-                        // Subtract the first selected row from the second in the destination matrix, using factor as the third parameter
-                        dest.subtractRows(selectedDestRows[0], selectedDestRows[1], factor);
-                        updateProgressPanel();
+                            // Subtract the first selected row from the second in the destination matrix, using factor as the third parameter
+                            dest.subtractRows(selectedDestRows[0], selectedDestRows[1], factor);
+                            updateProgressPanel();
+                        } else {
+                            alert("Please select exactly two rows in each matrix to perform subtraction.");
+                        }
                     } else {
-                        alert("Please select exactly two rows in each matrix to perform subtraction.");
+                        alert("Invalid input. Please enter a valid real number.");
                     }
-                } else {
-                    alert("Invalid input. Please enter a valid real number.");
-                }
+                });
             });
 
 
@@ -263,27 +345,28 @@
 
 
             document.getElementById('btnMultiply').addEventListener('click', function() {
-                let factor = prompt("Enter the multiplication factor:"); // Prompt to enter the multiplication amount
-                factor = parseFraction(factor);
-                if (factor !== null) {
-                    console.log("Multiplying by " + factor);
+                showInputDialog("Multiply row by what number (decimal or fraction)?", function(factor) {
+                    factor = parseFraction(factor);
+                    if (factor !== null) {
+                        console.log("Multiplying by " + factor);
 
-                    let selectedSourceRows = source.getSelectedRows();
-                    let selectedDestRows = dest.getSelectedRows();
+                        let selectedSourceRows = source.getSelectedRows();
+                        let selectedDestRows = dest.getSelectedRows();
 
-                    // Multiply selected rows in the source matrix
-                    selectedSourceRows.forEach(rowIndex => {
-                        source.multiplyRow(rowIndex, factor);
-                    });
+                        // Multiply selected rows in the source matrix
+                        selectedSourceRows.forEach(rowIndex => {
+                            source.multiplyRow(rowIndex, factor);
+                        });
 
-                    // Multiply selected rows in the destination matrix
-                    selectedDestRows.forEach(rowIndex => {
-                        dest.multiplyRow(rowIndex, factor);
-                    });
-                    updateProgressPanel();
-                } else {
-                    alert("Invalid input. Please enter a valid number.");
-                }
+                        // Multiply selected rows in the destination matrix
+                        selectedDestRows.forEach(rowIndex => {
+                            dest.multiplyRow(rowIndex, factor);
+                        });
+                        updateProgressPanel();
+                    } else {
+                        alert("Invalid input. Please enter a valid number.");
+                    }
+                });
             });
 
         });
