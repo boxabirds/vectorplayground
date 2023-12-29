@@ -381,7 +381,27 @@ class MatrixComponent extends HTMLElement {
                         // margin-top: -0.1em
                         box-sizing: border-box;
                     }
-    
+                    .overlay-content {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%; /* Match parent size */
+                        height: 100%; /* Match parent size */
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        pointer-events: none;
+                        overflow: hidden;
+                    }
+                    .moving {
+                        animation: moveRow 0.5s ease-in-out forwards;
+                    }
+        
+                    @keyframes moveRow {
+                        0% { transform: translateY(0); }
+                        100% { transform: translateY(calc(var(--move-distance) * 2.3em)); } /* This will change based on direction */
+                    }
+          
                     .readonly-cell {
                         display: inline-block;
                         width: 40px; /* Adjust to match your input field size */
@@ -723,18 +743,20 @@ class MatrixComponent extends HTMLElement {
   
     swapRows(rowIndex1, rowIndex2) {
         if (rowIndex1 < this._matrix.length && rowIndex2 < this._matrix.length) {
+            console.log('Swapping rows:', rowIndex1, rowIndex2);
             const row1 = this.shadowRoot.querySelector(`#row-${rowIndex1}`);
             const row2 = this.shadowRoot.querySelector(`#row-${rowIndex2}`);
-  
+            
             // Calculate the distance to move
             const distance = rowIndex2 - rowIndex1;
             row1.style.setProperty('--move-distance', distance);
             row2.style.setProperty('--move-distance', -distance);
-  
+            
             // Apply the animation
             row1.classList.add('moving');
             row2.classList.add('moving');
-  
+            
+            console.log('Swapping rows animation should be starting:');
             // Listen for when the animation ends and then complete the swap
             const onAnimationEnd = () => {
                 // Remove the listener and animation class
